@@ -76,6 +76,8 @@ bool terminalTask::taskEntry()
     cp.addHandler(healthHandler,   "health",  "Output system health");
     cp.addHandler(timeHandler,     "time",    "'time' to view time.  'time set MM DD YYYY HH MM SS Wday' to set time");
 
+    //cp.addHandler(taskSuspendResume, "task", "blah blah");
+
     // File I/O handlers:
     cp.addHandler(catHandler,    "cat",   "Read a file.  Ex: 'cat 0:file.txt' or "
                                           "'cat 0:file.txt -noprint' to test if file can be read");
