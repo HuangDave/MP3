@@ -101,9 +101,9 @@ public:
      * @param  data     8-bit data byte to transfer
      * @return          Returns the received byte from external device via SSP data register.
      */
-    uint8_t  transfer(uint8_t data);
-    uint8_t* transfer(uint8_t *data, uint32_t len);
-    uint16_t transferWord(uint16_t data);
+    uint8_t   transfer(uint8_t data);
+    uint8_t*  transfer(uint8_t *data, uint32_t len);
+    uint16_t  transferWord(uint16_t data);
     uint16_t* transferWord(uint16_t *data, uint32_t len);
 
     // Destructor

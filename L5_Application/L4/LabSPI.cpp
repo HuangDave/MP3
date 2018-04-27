@@ -26,7 +26,7 @@ bool LabSPI::init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, 
     mPeripheral = peripheral;
     SSPn = SSP[mPeripheral];
 
-    SSPn->CR0 |= (dataSize << 0);                                               // 4-bit data size select (DSS)
+    SSPn->CR0 = (dataSize << 0);                                               // 4-bit data size select (DSS)
     // SSPn->CR0 |= (0xAA << 8);                                     // 8-bit serial clock rate (SCR), f_spi = PCLK / (CPSDVSR * [SCR + 1])
 
     SSPn->CR1 |= (1 << 1);                                                      // enable SSE

@@ -24,6 +24,7 @@
 #include "queue.h"
 #include "storage.hpp"
 #include "io.hpp"
+#include "utilities.h"
 
 #include "MP3/ST7735.hpp"
 #include "MP3/VS1053B.hpp"
@@ -31,26 +32,31 @@
 QueueHandle_t streamQueue;
 
 int main(void) {
-    streamQueue = xQueueCreate(32, sizeof(uint8_t));
+    //Point2D p0 = Point2D { 1, 1 };
+    //Point2D p1 = Point2D { 5, 100 };
+    //LCDDisplay.drawLine(p0, p1, Color { 0xFF, 0, 0 });
 
-    MP3.setVolume(150);
+    const uint32_t fileSize = 1024 * 6;
+    uint8_t *data = new uint8_t[fileSize];
+    FRESULT result = Storage::read("1:easy128.mp3", data, fileSize - 1);
+    printf("%s\n", result == FR_OK ? "FILE OK" : "FILE NOT OK");
 
-    Point2D p0 = Point2D { 1, 1 };
-    Point2D p1 = Point2D { 5, 100 };
-    LCDDisplay.drawLine(p0, p1, Color { 0xFF, 0, 0 });
-
-    //while(1);
-
-    uint8_t *data = new uint8_t(9000);
-    FRESULT result = Storage::read("1:testmusic.mp3", data, 9000 - 1);
-
-    uint8_t buffer[32];
-    for (uint8_t i = 0; i < 9000; i++) {
-        if (i != 0 && !(i % 32)) {
-            MP3.buffer(data, 32);
-        }
-        buffer[i] = data[i];
-
+    for (uint32_t i = 32; i < fileSize; i = i + 32) {
+        MP3.buffer(data, 32);
+        data += 32;
+        delay_ms(50);
     }
+
+    printf("\n");
+
+    printf("status: %x\n", MP3.readREG(0x1));
+    printf("mode %x\n",    MP3.readREG(0x0));
+    printf("clockf: %x\n", MP3.readREG(0x3));
+    printf("AUDATA %x\n",  MP3.readREG(0x5));
+    printf("HDAT0: %x\n",  MP3.readREG(0x8));
+    printf("HDAT1: %x\n",  MP3.readREG(0x9));
+    printf("vol %x\n",     MP3.readREG(0xB));
+
+    while (1);
     return 0;
 }
