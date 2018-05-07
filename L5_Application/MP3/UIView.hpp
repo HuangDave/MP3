@@ -9,19 +9,7 @@
 #define UIVIEW_HPP_
 
 #include "gfx.h"
-
-class Layer {
-
-protected:
-
-    Size2D mSize;
-    Color **mpData;
-
-public:
-
-    Layer(Size2D size);
-    ~Layer();
-};
+#include "ST7735.hpp"
 
 class UIView {
 
@@ -33,19 +21,19 @@ public:
     void setFrame(Frame frame);
     void setOrigin(Point2D origin);
     void setSize(Size2D size);
-
     void setBackgroundColor(Color c);
+
     // void setBorderColor(Color c);
     // void setSelected(bool selected);
 
-    void draw();
+     void reDraw();
 
 protected:
 
     Frame mFrame;
     Color mBackgroundColor;
-    Color mBorderColor;
-    bool mSelected;
+    //Color mBorderColor;
+    //bool  mSelected;
 
 };
 
