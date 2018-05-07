@@ -21,3 +21,4 @@ Point2D Point2DMake(int16_t x, int16_t y) {
     p.y = y;
     return p;
 }
+
