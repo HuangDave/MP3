@@ -58,26 +58,29 @@ protected:
 public:
 
     typedef union {
-        uint16_t hdat0;
-        uint16_t hdat1;
+        uint32_t bytes;
+
         struct {
-            uint8_t emphasis:    2;
-            uint8_t original:    1;
-            uint8_t copyright:   1;
-            uint8_t extension:   2;
-            uint8_t mode:        2;
-            uint8_t private_bit: 1;
-            uint8_t pad_bit:     1;
-            uint8_t samplerate:  2;
-            uint8_t bitrate:     4;
-        } __attribute__((packed)) HDAT0;
-        struct {
+            // HDAT0
+            uint8_t  emphasis:       2;
+            uint8_t  original:       1;
+            uint8_t  copyright:      1;
+            uint8_t  extension:      2;
+            uint8_t  mode:           2; // 3: mono, 2: dual channel, 1: joint stereo, 0: stereo
+            uint8_t  private_bit:    1; //
+            uint8_t  pad_bit:        1; // 1: additional slot, 0: normal frame
+            uint8_t  samplerate:     2; // 3: reserved, 2: 32/16/8 kHz, 1: 48/24/12 kHz, 0: 44/22/11 kHz
+            uint8_t  bitrate:        4;
+
+            // HDAT1
             uint8_t  protected_bit:  1;   // 1: no CRC, 0: CRC protected
             uint8_t  layer:          2;   // layer: 0x3 = 1, 0x2 = 2, 0x1 = 3, 0x0 = reserved
             uint8_t  id:             2;   // 0x3: ISO 11172-3 MPG 1.0
             uint16_t syncword:      11;   // stream valid should be 2047
-        } __attribute__((packed)) HDAT1;
+        } __attribute__((packed));
     } HeaderData;
+
+    static const uint16_t sampleRateLUT[4][4];
 
     static VS1053B& sharedInstance();
 
@@ -96,6 +99,9 @@ public:
     */
     bool isReady();
 
+    HeaderData getHDAT();
+    uint16_t getByteRate();
+    
     /**
     * Sets the volumes of the device.
     * The max volume is 0x00 while lowest volume is 0xFE.
@@ -108,6 +114,9 @@ public:
 
     void clearDecodeTime();
 
+    void sendEndFillBytes();
+
+    void playSong();
     void buffer(uint8_t *songData, uint32_t len);
 };
 

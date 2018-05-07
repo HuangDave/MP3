@@ -17,6 +17,10 @@
 #define ST7735_TFT_WIDTH  128
 #define ST7735_TFT_HEIGHT 160
 
+// swap width and height of LCD display for drawing due to X-Y exchange orientation
+#define SCREEN_WIDTH      160
+#define SCREEN_HEIGHT     128
+
 class ST7735: public LabSPI {
 
 protected:
@@ -36,36 +40,27 @@ protected:
     uint8_t write(uint8_t data);
     uint16_t writeWord(uint16_t data);
     void writeCommand(uint8_t cmd);
-    void writeColor(Color color, uint32_t repeat = 1);
-
-    //void setAddrWindow(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 
 public:
-
-    /// ST7735 display identification information.
-    typedef struct {
-        uint8_t manufacturerID;
-        uint8_t versionID;
-        uint8_t driverID;
-    } DeviceInfo;
 
     static ST7735& sharedInstance();
 
     virtual ~ST7735();
-
-    /// Gets the 24-bit display identification information
-    //DeviceInfo getDeviceInfo();
-
-    void lcd_delay(uint32_t ms);
 
     void toggleRESET();
     void toggleSleep(bool on);
     void toggleDisplay(bool on);
 
     void setAddrWindow(Point2D p0, Point2D p1);
+    void writeColor(Color color, uint32_t repeat = 1);
     void drawPixel(Point2D p, Color c);
     void drawLine(Point2D p0, Point2D p1, Color c);
     void fillRect(Point2D p0, Point2D p1, Color c);
+
+    void setAddrWindow(Frame frame);
+    void fillRect(Frame frame, Color c);
+
+    void drawFont(Point2D p, const uint8_t *bitmap, Color color, Color backgroundColor);
 };
 
 #endif /* ST7735_HPP_ */

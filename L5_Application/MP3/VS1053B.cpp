@@ -20,7 +20,7 @@
 #define SCI_SOFT_RESET   ( SM_SDINEW | SM_RESET )
 #define SCI_MODE_DEFAULT ( SM_LINE1 | SM_SDINEW )
 #define SCI_MODE_STREAM  ( SM_LINE1 | SM_SDINEW | SM_STREAM )
-#define SCI_MODE_CANCEL  ( SM_SDINEW | SM_CANCEL )
+#define SCI_MODE_CANCEL  ( SM_LINE1 | SM_SDINEW | SM_CANCEL )
 
 typedef enum {
     SM_DIFF          = (1 << 0),  // Differential: 0 = normal in-phase audio, 1 = left channel inverted
@@ -65,6 +65,13 @@ typedef enum {
     AUDATA_44100  = 44100,
 } SCI_AUDATA_OPTIONS;
 
+const uint16_t VS1053B::sampleRateLUT[4][4] = {
+    { 11025, 11025, 22050, 44100 },
+    { 12000, 12000, 24000, 48000 },
+    {  8000,  8000, 16000, 32000 },
+    {     0,     0,     0,     0 }
+};
+
 VS1053B* VS1053B::instance = NULL;
 
 VS1053B& VS1053B::sharedInstance() {
@@ -78,7 +85,9 @@ VS1053B& VS1053B::sharedInstance() {
 VS1053B::VS1053B() {
     init(SSP0, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_1);
 
-    SSPn->CPSR = 16;                                 // minimum prescaler of 2
+    // set pclk to 12MHz / 4 for write at reset
+    SSPn->CPSR = 16;                                // minimum prescaler of 2
+    SSPn->CR0 |= (0x0 << 8);
 
     mpDREQ  = configureGPIO(1, 30, false, false);   // Configure P1.30 as input for DREQ
     mpRESET = configureGPIO(0,  1, true, true);     // configure P0.1  for RESET
@@ -86,12 +95,12 @@ VS1053B::VS1053B() {
     mpSDCS  = configureGPIO(1, 31, true, true);     // Configure P1.31 for SDCS
     mpXDCS  = configureGPIO(2,  7, true, true);     // Configure P1.29 for XDCS
 
-    //reset();
+    reset();
 
     writeREG(SCI_MODE, SCI_MODE_DEFAULT);
-    writeREG(SCI_CLOCKF, SC_MULT_3x);
-    writeREG(SCI_AUDATA, AUDATA_44100 | AUDATA_STEREO); // AUDATA 44100 Hz sample rate
-    setVolume(175);
+    writeREG(SCI_CLOCKF, 0x8000);
+    //writeREG(SCI_AUDATA, AUDATA_44100 | AUDATA_STEREO); // AUDATA 44100 Hz sample rate
+    setVolume(200);
 
     while(!isReady()) delay_ms(3);
 }
@@ -117,10 +126,11 @@ void VS1053B::softReset() {
 bool VS1053B::isReady() { return mpDREQ->getLevel(); }
 
 uint16_t VS1053B::readSCI(uint8_t addr) {
-    while(!isReady());
     uint16_t data;
     selectCS();
     {
+        while(!isReady()) delay_ms(0.03);
+        SSPn->CPSR = 16; // SCK needs to match CLKI / 7 for SCI rw
         transfer(SCI_READ);
         transfer(addr);
         data = transferWord(0x00);
@@ -136,10 +146,14 @@ void VS1053B::writeSCI(uint8_t addr, uint16_t data) {
 void VS1053B::writeSCI(uint8_t addr, uint16_t *data, uint32_t len) {
     selectCS();
     {
+        while (!isReady()) delay_ms(0.03);
+        SSPn->CPSR = 16; // SCK needs to match CLKI / 7 for SCI rw
         transfer(SCI_WRITE);
         transfer(addr);
-        for (uint32_t i = 0; i < len; i++)
+        for (uint32_t i = 0; i < len; i++) {
             transferWord(data[i]);
+            while (!isReady()) delay_ms(0.03);
+        }
     }
     deselectCS();
     while(!isReady());
@@ -151,14 +165,12 @@ void VS1053B::writeSDI(uint8_t data) {
 
 void VS1053B::writeSDI(uint8_t *data, uint32_t len) {
     if (xSemaphoreTake(spiMutex[mPeripheral], portMAX_DELAY)) {
+        SSPn->CPSR = 4; // SCK needs to match CLKI / 4 for for SDI writes
         mpXDCS->setLow();
         {
             transfer(data, len);
         }
         mpXDCS->setHigh();
-
-        while (!isReady()) delay_ms(3);
-
         xSemaphoreGive(spiMutex[mPeripheral]);
     }
 }
@@ -177,10 +189,37 @@ void VS1053B::writeREG(uint8_t addr, uint16_t reg) {
 }
 
 void VS1053B::setVolume(uint8_t volume) {
-    // VS_VOL 16-bit reg controls the volume for both the left and right channels
-    writeSCI(SCI_VOL, ((volume << 8) | volume));
+    writeSCI(SCI_VOL, ((volume << 8) | volume));  // VS_VOL 16-bit reg controls the volume for both the left and right channels
+}
+
+VS1053B::HeaderData VS1053B::getHDAT() {
+    HeaderData hdat;
+    hdat.bytes = (readREG(SCI_HDAT1) << 16) | readREG(SCI_HDAT0);
+    return hdat;
+}
+
+uint16_t VS1053B::getByteRate() {
+    writeSCI(SCI_WRAMADDR, 0x1E29); // resync
+    return readSCI(SCI_WRAM);
+}
+
+void VS1053B::sendEndFillBytes() {
+    writeSCI(SCI_WRAMADDR, 0x1E06); // resync
+    uint8_t byte = readSCI(SCI_WRAM);
+    printf("endFillByte: %x\n", byte);
+    for (uint32_t i = 0; i < 2052; i++)
+        transfer(byte);
+}
+
+void VS1053B::playSong() {
+    writeREG(SCI_MODE, SCI_MODE_STREAM);
+    writeSCI(SCI_WRAMADDR, 0x1E29); // resync
+    writeSCI(SCI_WRAM, 0);
+
+    clearDecodeTime();
 }
 
 void VS1053B::buffer(uint8_t *songData, uint32_t len) {
+    while (!isReady()) delay_ms(3);
     writeSDI(songData, len);
 }

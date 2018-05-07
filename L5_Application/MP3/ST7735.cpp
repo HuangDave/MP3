@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+#include "utilities.h"
 
 #define ST7735_SWRESET (0x01)   // Software RESET
 #define ST7735_RDDID   (0x04)   // Read 24-bit device identification
@@ -22,7 +23,7 @@
 #define ST7735_SLPOUT  (0x11)   // Sleep Out
 #define ST7735_DISPOFF (0x28)   // Display ON
 #define ST7735_DISPON  (0x29)   // Display OFF
-
+#define ST7735_MADCTL  (0x36)   // Write Direction
 #define swap(x, y) { x = x + y; y = x - y; x = x - y ; }
 
 ST7735* ST7735::instance = NULL;
@@ -33,12 +34,12 @@ ST7735& ST7735::sharedInstance() {
 }
 
 ST7735::ST7735() {
-    init(SSP0, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_2);
+    init(SSP0, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_1);
 
-    // configure pclk to be 12 MHz = (clk / pclk_div) / CPSDVSR * [SCR+1],
-    // pclk_div = 2, CPSDVSR = 2, SCR = 0
+    // configure pclk to be ~12 MHz = (clk / pclk_div) / CPSDVSR * [SCR+1],
+    // pclk_div = 1, CPSDVSR = 4, SCR = 0
     SSPn->CR0 &= ~(1 << 8);
-    SSPn->CPSR = 2;                                 // minimum prescaler of 2
+    SSPn->CPSR = 4;                                 // minimum prescaler of 2
 
     SSPn->CR1 &= ~(1 << 2);                         // clear MS to enable SSP as master
 
@@ -50,29 +51,31 @@ ST7735::ST7735() {
 }
 
 ST7735::~ST7735() {
-
-}
-
-void ST7735::lcd_delay(uint32_t ms) {
-    for (uint32_t i = ms * 24000; i > 0; i--);
+    delete mpDC;
+    delete mpRESET;
 }
 
 void ST7735::toggleRESET() {
     selectCS();
     {
         mpRESET->setLow();
-        lcd_delay(500);
+        delay_ms(10);
         mpRESET->setHigh();
-        lcd_delay(500);
+        delay_ms(10);
     }
     deselectCS();
 
     writeCommand(ST7735_SLPOUT);
-    lcd_delay(200);
+    delay_ms(10);
     writeCommand(ST7735_DISPON);
-    lcd_delay(200);
+    delay_ms(10);
 
-    fillRect(Point2D { 0,0 }, Point2D { 128, 160 }, WHITE_COLOR);
+    // set initial display to white
+    fillRect(Frame { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT }, WHITE_COLOR);
+    //fillRect(Point2D { 0,0 }, Point2D { 128, 160 }, WHITE_COLOR);
+
+    writeCommand(ST7735_MADCTL);
+    write(0x84); // set orientation X-Y exchange
 }
 
 void ST7735::toggleSleep(bool on) {
@@ -81,7 +84,7 @@ void ST7735::toggleSleep(bool on) {
         selectCS();
         transfer(on ? ST7735_DISPON : ST7735_DISPOFF);
         deselectCS();
-        lcd_delay(500);
+        delay_ms(500);
     }
     deselectDC();
 }
@@ -92,7 +95,7 @@ void ST7735::toggleDisplay(bool on) {
         selectCS();
         transfer(on ? ST7735_DISPON : ST7735_DISPOFF);
         deselectCS();
-        lcd_delay(500);
+        delay_ms(500);
     }
     deselectDC();
 }
@@ -149,6 +152,18 @@ void ST7735::setAddrWindow(Point2D p0, Point2D p1) {
     writeCommand(ST7735_RAMWR);                     // write to memory
 }
 
+void ST7735::setAddrWindow(Frame frame) {
+    // Using orientation: X-Y exchange
+    // swap x with y and width with height when setting address windrow
+    writeCommand(ST7735_CASET);                     // write x-component of address window
+    writeWord(frame.y);
+    writeWord(frame.y + frame.height - 1);
+    writeCommand(ST7735_RASET);                     // write y-component of address window
+    writeWord(frame.x);
+    writeWord(frame.x + frame.width - 1);
+    writeCommand(ST7735_RAMWR);                     // write to memory
+}
+
 void ST7735::drawPixel(Point2D p, Color c) {
 
     if ((p.x < 0) || (p.x >= ST7735_TFT_WIDTH) ||   // ensure point is within the boundary of the screen
@@ -185,7 +200,6 @@ void ST7735::drawLine(Point2D p0, Point2D p1, Color c) {
 	if (p0.y < p1.y) ystep = 1;
 	else 	         ystep = -1;
 
-
 	for (; p0.x <= p1.x; p0.x++) {
 		if (slope) drawPixel(Point2D { p0.y, p0.x }, c);
 		else       drawPixel(Point2D { p0.x, p0.y }, c);
@@ -208,19 +222,16 @@ void ST7735::fillRect(Point2D p0, Point2D p1, Color c) {
 	writeColor(c, width * height);
 }
 
-/*
-ST7735::DeviceInfo ST7735::getDeviceInfo() {
-    DeviceInfo info;
-    selectCS();
-    {
-        writeCommand(ST7735_RDDID);
-        transfer(0x00);                         // dummy byte
-        info.manufacturerID = transfer(0xDA);
-        info.versionID = transfer(0xDB);
-        info.driverID = transfer(0xDC);
-    }
-    deselectCS();
-    return info;
+void ST7735::fillRect(Frame frame, Color c) {
+    setAddrWindow(frame);
+    writeColor(c, frame.width * frame.height);
 }
 
-*/
+void ST7735::drawFont(Point2D p, const uint8_t *bitmap, Color color, Color backgroundColor) {
+    setAddrWindow( Frame { p.x, p.y, 5, 8 } );
+    for (uint8_t y = 0; y < 5; y++) {
+        for (uint8_t x = 0; x < 8; x++) {
+            writeColor( !!(bitmap[y] & (1 << x)) ? color : backgroundColor );
+        }
+    }
+}
