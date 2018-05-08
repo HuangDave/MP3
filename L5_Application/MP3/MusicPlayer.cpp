@@ -15,7 +15,7 @@ MusicPlayer::MusicPlayer()
     tableView = new UITableView(Frame { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
     tableView->setRowHeight(kRowHeight);
     tableView->setMininmumRows(kNumRows);
-    tableView->attachCellUpdateHandler(&updateSongItem);
+    //tableView->attachCellUpdateHandler(&updateSongItem);
     tableView->update();
 }
 

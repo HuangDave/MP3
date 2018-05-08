@@ -42,6 +42,7 @@ public:
     virtual ~UITableView();
 
     void reDraw();
+    void reDraw(uint8_t row);
     void update(uint8_t row);
 
     void setMininmumRows(uint8_t rows);

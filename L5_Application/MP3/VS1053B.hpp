@@ -27,7 +27,7 @@
 #define SCI_VOL         (0xB)
 
 /**
- * VS1053B operates at XTALI = 12.288 MHz or 24-26 MHz when SM_CLK_RANGE in SCI_MODE is set to 1.
+ * VS1053B operates input clock freq. XTALI = 12.288 MHz or 24-26 MHz when SM_CLK_RANGE in SCI_MODE is set to 1.
  *
  * The SCI_CLOCKF register is used to increase the internal clock of the device.
  * CLKI = XTALI * multiplier

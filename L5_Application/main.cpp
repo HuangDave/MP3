@@ -56,11 +56,35 @@ void setupSongMenu() {
 
     UITableView menu = UITableView(Frame { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
     menu.setRowHeight(10);
-    menu.setMininmumRows(5);
+    menu.setMininmumRows(8);
     menu.setItemCount(songCount);
     menu.attachCellUpdateHandler(&updateSongeItem);
     menu.update();
+
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
+    delay_ms(1000);
+    menu.cursorDidMoveDown();
 }
+
 
 void printHDAT() {
 
@@ -92,6 +116,8 @@ void printHDAT() {
 }
 
 int main(void) {
+
+    setupSongMenu();
 
 //    printf("status: %x\n", MP3.readREG(0x1));
 //    printf("mode %x\n",    MP3.readREG(0x0));
