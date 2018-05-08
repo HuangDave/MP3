@@ -15,7 +15,9 @@ SemaphoreHandle_t LabSPI::spiMutex[] = { xSemaphoreCreateMutex(), xSemaphoreCrea
 
 LabSPI::LabSPI() : SSPn(NULL), mpCS(NULL), mPeripheral(SSP0) { }
 
-LabSPI::~LabSPI() { }
+LabSPI::~LabSPI() {
+    delete mpCS; mpCS = NULL;
+}
 
 bool LabSPI::init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCLK_Rate rate) {
     switch (peripheral) {                                                       // enable PCLK for SPI
@@ -27,10 +29,8 @@ bool LabSPI::init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, 
     SSPn = SSP[mPeripheral];
 
     SSPn->CR0 = (dataSize << 0);                                               // 4-bit data size select (DSS)
-    // SSPn->CR0 |= (0xAA << 8);                                     // 8-bit serial clock rate (SCR), f_spi = PCLK / (CPSDVSR * [SCR + 1])
-
     SSPn->CR1 |= (1 << 1);                                                      // enable SSE
-    SSPn->CR1 &= ~(1 << 2);                                                   // clear MS to enable SSP as master
+    SSPn->CR1 &= ~(1 << 2);                                                     // clear MS to enable SSP as master
 
     return true;
 }

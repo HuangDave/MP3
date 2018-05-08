@@ -79,13 +79,10 @@ VS1053B& VS1053B::sharedInstance() {
     return *instance;
 }
 
-/**
- * VS1053B operates at 12.288 MHz or 24-26 MHz when SM_CLK_RANGE in SCI_MODE is set to 1.
- */
 VS1053B::VS1053B() {
     init(SSP0, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_1);
 
-    // set pclk to 12MHz / 4 for write at reset
+    // set initial pclk to 3MHz = 12MHz / 4 for write at reset
     SSPn->CPSR = 16;                                // minimum prescaler of 2
     SSPn->CR0 |= (0x0 << 8);
 
@@ -98,17 +95,20 @@ VS1053B::VS1053B() {
     reset();
 
     writeREG(SCI_MODE, SCI_MODE_DEFAULT);
-    writeREG(SCI_CLOCKF, 0x8000);
-    //writeREG(SCI_AUDATA, AUDATA_44100 | AUDATA_STEREO); // AUDATA 44100 Hz sample rate
-    setVolume(200);
+    writeREG(SCI_CLOCKF, 0x6000);                   // set multiplier to 3.0x
+    setVolume(150);
 
     while(!isReady()) delay_ms(3);
 }
 
-VS1053B::~VS1053B() { }
+VS1053B::~VS1053B() {
+    delete mpDREQ;  mpDREQ  = NULL;
+    delete mpRESET; mpRESET = NULL;
+    delete mpSDCS;  mpSDCS  = NULL;
+    delete mpXDCS;  mpXDCS  = NULL;
+}
 
 void VS1053B::reset() {
-    printf("reseting\n");
     mpRESET->setHigh();
     mpRESET->setLow();
     delay_ms(2);

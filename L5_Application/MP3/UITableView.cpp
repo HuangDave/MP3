@@ -26,7 +26,7 @@ void UITableViewCell::setHighlighted(bool highlighted) { mHighlighted = highligh
 void UITableViewCell::setHighlightedColor(Color color) { mHighlightedColor = color;  }
 
 void UITableViewCell::reDraw() {
-    UIView::reDraw();
+    UIView::reDraw( mHighlighted ? &mHighlightedColor : &mBackgroundColor );       // use highlighted color if cell is highlighted
 
     for (uint8_t i = 0; i < mTextLen; i++) {
         const uint8_t padding = mFrame.x + 4;
@@ -38,7 +38,8 @@ void UITableViewCell::reDraw() {
 
         const uint8_t *bitmap = Font[int(mpText[i])];
 
-        LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
+        if (mHighlighted) LCDDisplay.drawFont(Point2D{x, y}, bitmap, WHITE_COLOR, mHighlightedColor);
+        else             LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
     }
 }
 
@@ -75,14 +76,13 @@ void UITableView::reDraw() {
     }
 }
 
-void UITableView::update(uint8_t row) { cellForRow(row).reDraw(); }
-
-void UITableView::setMininmumRows(uint8_t rows) { mRows = rows; }
-void UITableView::setRowHeight(uint8_t height) { mRowHeight = height; }
-void UITableView::setDividerColor(Color color) { mDividerColor = color; }
-void UITableView::setItemCount(uint32_t count) { mItemCount = count; }
+void UITableView::update(uint8_t row)                            { cellForRow(row).reDraw(); }
+void UITableView::setMininmumRows(uint8_t rows)                  { mRows = rows; }
+void UITableView::setRowHeight(uint8_t height)                   { mRowHeight = height; }
+void UITableView::setDividerColor(Color color)                   { mDividerColor = color; }
+void UITableView::setItemCount(uint32_t count)                   { mItemCount = count; }
 void UITableView::attachCellUpdateHandler(UpdateHandler handler) { mCellUpdateHandler = handler; }
-UITableViewCell& UITableView::cellForRow(uint8_t row) { return mpCells[row]; }
+UITableViewCell& UITableView::cellForRow(uint8_t row)            { return mpCells[row]; }
 
 void UITableView::highlightCellAt(uint8_t row) {
     cellForRow(row).setHighlighted(false);
@@ -101,11 +101,9 @@ void UITableView::cursorDidMoveUp() {
         mCursorPos--;
         unhighlightCellAt(prevPos);
         highlightCellAt(mCursorPos);
-
     } else {
         mIndexStart--;
         mIndexEnd--;
-
         reDraw();
     }
 }
@@ -117,11 +115,9 @@ void UITableView::cursorDidMoveDown() {
         mCursorPos++;
         unhighlightCellAt(prevPos);
         highlightCellAt(mCursorPos);
-
     } else {
         mIndexStart++;
         mIndexEnd++;
-
         reDraw();
     }
 }

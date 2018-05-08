@@ -24,7 +24,8 @@
 #define ST7735_DISPOFF (0x28)   // Display ON
 #define ST7735_DISPON  (0x29)   // Display OFF
 #define ST7735_MADCTL  (0x36)   // Write Direction
-#define swap(x, y) { x = x + y; y = x - y; x = x - y ; }
+
+// #define swap(x, y) { x = x + y; y = x - y; x = x - y ; }
 
 ST7735* ST7735::instance = NULL;
 
@@ -74,8 +75,9 @@ void ST7735::toggleRESET() {
     fillRect(Frame { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT }, WHITE_COLOR);
     //fillRect(Point2D { 0,0 }, Point2D { 128, 160 }, WHITE_COLOR);
 
+    // set orientation X-Y exchange
     writeCommand(ST7735_MADCTL);
-    write(0x84); // set orientation X-Y exchange
+    write(0x84);
 }
 
 void ST7735::toggleSleep(bool on) {
@@ -142,6 +144,7 @@ void ST7735::writeColor(Color color, uint32_t repeat) {
     }
 }
 
+/*
 void ST7735::setAddrWindow(Point2D p0, Point2D p1) {
     writeCommand(ST7735_CASET);                     // write x-component of address window
     writeWord(p0.x);
@@ -149,18 +152,6 @@ void ST7735::setAddrWindow(Point2D p0, Point2D p1) {
     writeCommand(ST7735_RASET);                     // write y-component of address window
     writeWord(p0.y);
     writeWord(p1.y);
-    writeCommand(ST7735_RAMWR);                     // write to memory
-}
-
-void ST7735::setAddrWindow(Frame frame) {
-    // Using orientation: X-Y exchange
-    // swap x with y and width with height when setting address windrow
-    writeCommand(ST7735_CASET);                     // write x-component of address window
-    writeWord(frame.y);
-    writeWord(frame.y + frame.height - 1);
-    writeCommand(ST7735_RASET);                     // write y-component of address window
-    writeWord(frame.x);
-    writeWord(frame.x + frame.width - 1);
     writeCommand(ST7735_RAMWR);                     // write to memory
 }
 
@@ -220,6 +211,20 @@ void ST7735::fillRect(Point2D p0, Point2D p1, Color c) {
 
 	setAddrWindow(p0, p1);
 	writeColor(c, width * height);
+}
+ */
+
+
+void ST7735::setAddrWindow(Frame frame) {
+    // Using orientation: X-Y exchange
+    // swap x with y and width with height when setting address windrow
+    writeCommand(ST7735_CASET);                     // write x-component of address window
+    writeWord(frame.y);
+    writeWord(frame.y + frame.height - 1);
+    writeCommand(ST7735_RASET);                     // write y-component of address window
+    writeWord(frame.x);
+    writeWord(frame.x + frame.width - 1);
+    writeCommand(ST7735_RAMWR);                     // write to memory
 }
 
 void ST7735::fillRect(Frame frame, Color c) {

@@ -26,37 +26,77 @@
 #define SCI_HDAT1       (0x9)
 #define SCI_VOL         (0xB)
 
+/**
+ * VS1053B operates at XTALI = 12.288 MHz or 24-26 MHz when SM_CLK_RANGE in SCI_MODE is set to 1.
+ *
+ * The SCI_CLOCKF register is used to increase the internal clock of the device.
+ * CLKI = XTALI * multiplier
+ *
+ * When performing SCI reads, SPI clk should be ~(CLKI/7).
+ * When performing SCI / SDI writes, SPI clk should be ~(CLKI/4).
+ *
+ * Therefore, on RESEET, the intial SPI clock rate needs to be 12.288Mhz / 4 = ~3MHz.
+ * Once the SCI_CLOCKF multiplier is set, the SPI clk can be changed correspondingly to faster speeds.
+ */
 class VS1053B: public LabSPI {
 
 protected:
 
     static VS1053B *instance;
 
-    // used for active low asynchronous reset
+    /// used for active low asynchronous reset
     LabGPIO *mpRESET;
-    // Data Request bus from device. Signals execution of register update if driven low.
+    /// Data Request bus from device. Signals execution of register update if driven low.
     LabGPIO *mpDREQ;
-    // XDCS / BSYNC: Data chip select / byte sync
+    /// XDCS / BSYNC: Data chip select / byte sync
     LabGPIO *mpXDCS;
-    // Set to high to disable decoder SD read
+    /// Set to high to disable decoder SD read
     LabGPIO *mpSDCS;
 
+    /// TRUE if the device is currently playing music.
     bool mIsPlaying;
 
     VS1053B();
 
+    /**
+     * Read a data through SCI port.
+     * @param  addr Address to read.
+     * @return      Returns the 16-bit register data.
+     */
     uint16_t readSCI(uint8_t addr);
 
+    /**
+     * Write 2 bytes of data to a SCI Regsiter.
+     * @param addr SCI Register address.
+     * @param data Data to write to SCI register.
+     */
     void writeSCI(uint8_t addr, uint16_t data);
+
+    /**
+     * Write n-bytes of data to a SCI Regsiter.
+     * @param addr SCI Register address.
+     * @param data Pointer array.
+     * @param len  Length of array.
+     */
     void writeSCI(uint8_t addr, uint16_t *data, uint32_t len);
 
+    /**
+     * Send a byte of data using the SDI port for decoding.
+     * @param data Byte of song data to send.
+     */
     void writeSDI(uint8_t data);
     void writeSDI(uint8_t *data, uint32_t len);
 
+    /**
+     * Write to a SCI Register.
+     * @param addr SCI Register Address to write to.
+     * @param reg  Register data.
+     */
     void writeREG(uint8_t addr, uint16_t reg);
 
 public:
 
+    // 32-bit Decoded Header Data
     typedef union {
         uint32_t bytes;
 
@@ -86,9 +126,23 @@ public:
 
     virtual ~VS1053B();
 
+    /**
+     * Read a SCI register.
+     * @param  addr SCI Register Address.
+     * @return      Returns the 16-bit register data.
+     */
     uint16_t readREG(uint8_t addr);
 
+    /**
+     * Performs a hardware reset.
+     * RESET is toggled low for 2ms.
+     * When RESET is driven high, wait for DREQ to be driven high before continueing.
+     */
     void reset();
+
+    /**
+     * Performs a software reset by setting the SM_CANCEL bit of the SCI_MODE register.
+     */
     void softReset();
 
     /**
@@ -99,9 +153,14 @@ public:
     */
     bool isReady();
 
+    /**
+     * Read 32-bit decoded header data.
+     * If no data is decoded, the data will be empty.
+     * @return Returns a HeaderData.
+     */
     HeaderData getHDAT();
     uint16_t getByteRate();
-    
+
     /**
     * Sets the volumes of the device.
     * The max volume is 0x00 while lowest volume is 0xFE.
@@ -109,14 +168,24 @@ public:
     * @param volume uint8_t ranging from 0x00 to 0xFE (0 - 254)
     */
     void setVolume(uint8_t volume);
-    //void incrementVolume();
-    //void decrementVolume();
 
+    /**
+     * Reset current decode time to 0:00.
+     */
     void clearDecodeTime();
 
     void sendEndFillBytes();
 
+    /**
+     * Enable device audio playback.
+     */
     void playSong();
+
+    /**
+     * Buffer song data to decoder.
+     * @param songData Song data to buffer.
+     * @param len      Length of buffer (ideally 32).
+     */
     void buffer(uint8_t *songData, uint32_t len);
 };
 

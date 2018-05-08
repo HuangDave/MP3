@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "tasks.hpp"
 #include "FreeRTOS.h"
@@ -34,23 +35,21 @@
 QueueHandle_t streamQueue;
 
 char *list[] {
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
+    "t8vvUZ 8zHPJvS2n",
+    "ZOfznksXVxR1kp9",
+    "dUC7le4zO6jngAM",
+    "azY ZIKHGGXgXLzv",
+    "OQLZu3ZDxCaLYQI",
+    "Ss13LembrMtn IjnC",
+    "EmUVTm7TNEwoFRn",
+    "mXHSnzuhRCuNQ80",
+    "pRqUnYZYQCf4pqf",
+    "ckt dtqINXOPHEcV"
 };
 uint32_t songCount = 10;
 
-//UITableView<char> songMenu = UITableView<char>(Frame { 0, 0, ST7735_TFT_WIDTH, ST7735ST7735_TFT_HEIGHT});
-
 void updateSongeItem(UITableViewCell &cell, uint32_t index) {
-
+    cell.setText(list[index], strlen(list[index]));
 }
 
 void setupSongMenu() {
@@ -93,28 +92,6 @@ void printHDAT() {
 }
 
 int main(void) {
-
-
-    //setupSongMenu();
-
-    /*
-    Point2D p0 = Point2D { 1, 1 };
-    Point2D p1 = Point2D { 5, 100 };
-    LCDDisplay.drawLine(p0, p1, Color { 0xFF, 0, 0 });
-
-    uint8_t font[] = {
-            0x7C, 0x12, 0x11, 0x12, 0x7C
-    };
-    LCDDisplay.drawFont(Point2D{1,1}, font, BLACK_COLOR, GREEN_COLOR);
-
-    uint8_t font2[] = {
-            0x7F, 0x49, 0x49, 0x49, 0x36
-    };
-    LCDDisplay.drawFont(Point2D{7,1}, font2, BLACK_COLOR, GREEN_COLOR);
-
-    delay_ms(1000);
-
-    LCDDisplay.drawFont(Point2D{7,1}, font2, BLACK_COLOR, RED_COLOR); */
 
 //    printf("status: %x\n", MP3.readREG(0x1));
 //    printf("mode %x\n",    MP3.readREG(0x0));

@@ -23,18 +23,13 @@ public:
     void setSize(Size2D size);
     void setBackgroundColor(Color c);
 
-    // void setBorderColor(Color c);
-    // void setSelected(bool selected);
-
-     void reDraw();
+     void reDraw(Color *color = NULL);
 
 protected:
 
     Frame mFrame;
     Color mBackgroundColor;
-    //Color mBorderColor;
-    //bool  mSelected;
-
+    
 };
 
 #endif /* UIVIEW_HPP_ */

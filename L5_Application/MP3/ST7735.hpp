@@ -21,6 +21,10 @@
 #define SCREEN_WIDTH      160
 #define SCREEN_HEIGHT     128
 
+/**
+ * ST7735 operates at ~12MHz.
+ *
+ */
 class ST7735: public LabSPI {
 
 protected:
@@ -51,11 +55,11 @@ public:
     void toggleSleep(bool on);
     void toggleDisplay(bool on);
 
-    void setAddrWindow(Point2D p0, Point2D p1);
+    //void setAddrWindow(Point2D p0, Point2D p1);
     void writeColor(Color color, uint32_t repeat = 1);
-    void drawPixel(Point2D p, Color c);
-    void drawLine(Point2D p0, Point2D p1, Color c);
-    void fillRect(Point2D p0, Point2D p1, Color c);
+    //void drawPixel(Point2D p, Color c);
+    //void drawLine(Point2D p0, Point2D p1, Color c);
+    //void fillRect(Point2D p0, Point2D p1, Color c);
 
     void setAddrWindow(Frame frame);
     void fillRect(Frame frame, Color c);

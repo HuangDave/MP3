@@ -72,7 +72,7 @@ protected:
 
     Color mDividerColor;
 
-    /// total numberof items
+    /// total number of items
     uint32_t mItemCount;
 
     /// current highlighted row, should be between { 0, mRows - 1 }
