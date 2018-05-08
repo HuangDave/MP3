@@ -12,6 +12,21 @@
 
 class UITableViewCell;
 
+class UITableViewDataSource {
+
+public:
+    virtual uint32_t numberOfItems() const = 0;
+    virtual uint8_t numberOfRows() const = 0;
+    virtual uint8_t rowHeight() const = 0;
+    virtual void cellForIndex(UITableViewCell &cell, uint32_t index) = 0;
+};
+
+class UITableViewDelegate {
+
+public:
+    virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) = 0;
+};
+
 class UITableView: public UIView {
 
 public:
@@ -26,6 +41,9 @@ public:
 
     UITableView(Frame frame);
     virtual ~UITableView();
+
+    void setDataSource(UITableViewDataSource *dataSource);
+    void setDelegate(UITableViewDelegate *delegate);
 
     void reDraw() override;
     void reDraw(uint8_t row);
@@ -50,6 +68,9 @@ public:
 
 protected:
 
+    UITableViewDataSource *mDataSource;
+    UITableViewDelegate   *mDelegate;
+
     /// Array of all reusable cells.
     UITableViewCell *mpCells;
 
@@ -60,19 +81,14 @@ protected:
     uint8_t mRows;
     /// Height of each table view rows
     uint8_t mRowHeight;
-
     Color mDividerColor;
-
     /// total number of items
     uint32_t mItemCount;
-
     /// current highlighted row, should be between { 0, mRows - 1 }
     uint8_t mCursorPos;
-
     // current index range of items that are displayed
     uint8_t mIndexStart;
     uint8_t mIndexEnd;
-
     bool mInvalidated;
 
     UITableViewCell& cellForRow(uint8_t row);
@@ -84,7 +100,6 @@ protected:
 
     char *mpText;
     uint32_t mTextLen;
-
     bool mHighlighted;
     Color mHighlightedColor;
 

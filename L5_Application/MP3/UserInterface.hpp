@@ -14,11 +14,15 @@
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-class UIView;
-class UITableView;
-class UITableViewCell;
+#include <MP3/UI/UITableView.hpp>
 
-class UserInterface: public scheduler_task {
+//class UIView;
+//class UITableView;
+//class UITableViewCell;
+//class UITableViewDataSource;
+//class UITableViewDelegate;
+
+class UserInterface: public scheduler_task, virtual UITableViewDataSource, virtual UITableViewDelegate {
 
 protected:
 
@@ -38,8 +42,14 @@ public:
     UITableView& songMenu() { return *mpSongMenu; };
 
     void addSubview(UIView *view);
-
     void updateViews();
+
+    virtual uint32_t numberOfItems() const final;
+    virtual uint8_t numberOfRows() const final;
+    virtual uint8_t rowHeight() const final;
+    virtual void cellForIndex(UITableViewCell &cell, uint32_t index) final;
+
+    virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
 };
 
 #endif /* USERINTERFACE_HPP_ */

@@ -6,23 +6,22 @@
  */
 
 #include <MP3/UserInterface.hpp>
+
 #include <stdio.h>
 #include <string.h>
 #include "io.hpp"
 
 #include <MP3/Drivers/ST7735.hpp>
+//#include <MP3/UI/UITableView.hpp>
 
-#include <MP3/UI/UITableView.hpp>
-
-UserInterface::UserInterface(uint8_t priority) : scheduler_task("ui", 2000, priority)  {
+UserInterface::UserInterface(uint8_t priority) : scheduler_task("ui", 2048, priority)  {
     // Initialize song menu
     const uint8_t kMenuHeight = 100;
-    const uint8_t kRowHeight  = 10;
-    const uint8_t kNumRows    = 10;
+    //const uint8_t kRowHeight  = 10;
+    //const uint8_t kNumRows    = 10;
 
     mpSongMenu = new UITableView(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
-    mpSongMenu->setRowHeight(kRowHeight);
-    mpSongMenu->setMininmumRows(kNumRows);
+
     //mpSongMenu->setItemCount(songCount);
     //mpSongMenu->attachCellSelectHandler(&(UserInterface::userDidSelectSong));
     //mpSongMenu->attachCellUpdateHandler(&(UserInterface::updateSongeItem));
@@ -45,6 +44,8 @@ UserInterface::~UserInterface() {
 // Member Functions
 
 bool UserInterface::init() {
+    (*mpSongMenu).setDataSource((UITableViewDataSource *)this);
+    (*mpSongMenu).setDelegate((UITableViewDelegate *)this);
     updateViews();
     return true;
 }
@@ -67,4 +68,26 @@ void UserInterface::updateViews() {
     for (UIView *view : mpSubviews) {
         view->reDraw();
     }
+}
+
+// UITableView Datasource & Delegate
+
+uint32_t UserInterface::numberOfItems() const {
+    return 0;
+}
+
+uint8_t UserInterface::numberOfRows() const {
+    return 10;
+}
+
+uint8_t UserInterface::rowHeight() const {
+    return 10;
+}
+
+void UserInterface::cellForIndex(UITableViewCell &cell, uint32_t index) {
+
+}
+
+void UserInterface::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
+
 }

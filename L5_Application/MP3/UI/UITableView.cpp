@@ -12,61 +12,6 @@
 #include <MP3/Drivers/ST7735.hpp>
 
 // ---------------------------------------------------------- //
-//                      UITableViewCell                       //
-// ---------------------------------------------------------- //
-
-UITableViewCell::UITableViewCell() : UIView(Frame{0,0,0,0}) {
-    init();
-}
-
-UITableViewCell::UITableViewCell(Frame frame) : UIView(frame) {
-    init();
-}
-
-void UITableViewCell::init() {
-    mpText = NULL;
-    mTextLen = 0;
-
-    mHighlighted = false;
-    mHighlightedColor = BLACK_COLOR;
-}
-
-void UITableViewCell::setText(char *text, uint32_t len) {
-    mpText = text;
-    mTextLen = len;
-
-    reDraw();
-}
-
-void UITableViewCell::setHighlighted(bool highlighted) { mHighlighted = highlighted; }
-void UITableViewCell::setHighlightedColor(Color color) { mHighlightedColor = color;  }
-
-void UITableViewCell::reDraw() {
-    UIView::reDrawWithBackground( mHighlighted ? &mHighlightedColor : &mBackgroundColor );       // use highlighted color if cell is highlighted
-
-    uint8_t len = mTextLen > 15 ? 18 : mTextLen;
-
-    char str[18];
-    strncpy(str, mpText, 15);
-    for (uint8_t i = 15; i < 18; i++)
-        str[i] = '.';
-
-    for (uint8_t i = 0; i < len; i++) {
-        const uint8_t padding = mFrame.x + 4;
-        const uint8_t charSpacing = (i * 1);
-        const uint8_t charPos = (i * 5);
-
-        const uint8_t x = padding + charSpacing + charPos;
-        const uint8_t y = mFrame.y + 1;
-
-        const uint8_t *bitmap = Font[int(str[i])];
-
-        if (mHighlighted) LCDDisplay.drawFont(Point2D{x, y}, bitmap, WHITE_COLOR, mHighlightedColor);
-        else              LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
-    }
-}
-
-// ---------------------------------------------------------- //
 //                        UITableView                         //
 // ---------------------------------------------------------- //
 
@@ -84,6 +29,9 @@ UITableView::UITableView(Frame frame) : UIView(frame) {
 }
 
 UITableView::~UITableView() {
+    mDataSource = NULL;
+    mDelegate   = NULL;
+
     delete mpCells;
     mpCells = NULL;
 }
@@ -91,6 +39,11 @@ UITableView::~UITableView() {
 void UITableView::updateTableIfNeeded() {
 
     if ( (mpCells == NULL && mRows > 0) || mInvalidated) {
+
+        mRows      = (*mDataSource).numberOfRows();
+        mItemCount = (*mDataSource).numberOfItems();
+        mRowHeight = (*mDataSource).rowHeight();
+
         mpCells = new UITableViewCell[mRows];
         for (uint8_t i = 0; i < mRows; i++) {
             uint8_t y = i * mRowHeight + (!!i * 1);
@@ -110,8 +63,6 @@ void UITableView::reDraw() {
 
     updateTableIfNeeded();
 
-    printf("redrawing rows\n");
-
     for (uint8_t row = 0; row < mRows; row++) {
         uint32_t index = mIndexStart + row;
         if (index >= mItemCount) break;
@@ -120,27 +71,22 @@ void UITableView::reDraw() {
     }
 }
 
-void UITableView::reDraw(uint8_t row) {
-    cellForRow(row).reDraw();
+void UITableView::reDraw(uint8_t row)                              { cellForRow(row).reDraw(); }
 
-    // draw divider
-    //if (row == 0) return;
-    //uint8_t y = row * mRowHeight;
-    //Frame dividerFrame = Frame { 0, y, SCREEN_WIDTH, 1 };
-    //LCDDisplay.fillRect(dividerFrame, BLACK_COLOR);
-}
+void UITableView::setDataSource(UITableViewDataSource *dataSource) { mDataSource = dataSource; }
+void UITableView::setDelegate(UITableViewDelegate *delegate)       { mDelegate = delegate; }
 
-void UITableView::setMininmumRows(uint8_t rows)                  { mRows = rows;        mInvalidated = true; }
-void UITableView::setRowHeight(uint8_t height)                   { mRowHeight = height; mInvalidated = true; }
-void UITableView::setDividerColor(Color color)                   { mDividerColor = color;                    }
-void UITableView::setItemCount(uint32_t count)                   { mItemCount = count;                       }
+void UITableView::setMininmumRows(uint8_t rows)                    { mRows = rows;        mInvalidated = true; }
+void UITableView::setRowHeight(uint8_t height)                     { mRowHeight = height; mInvalidated = true; }
+void UITableView::setDividerColor(Color color)                     { mDividerColor = color;                    }
+void UITableView::setItemCount(uint32_t count)                     { mItemCount = count;                       }
 
-void UITableView::selectCurrentRow()                             { mCellSelectHandler(mIndexStart + mCursorPos); }
+void UITableView::selectCurrentRow()                               { mCellSelectHandler(mIndexStart + mCursorPos); }
 
-void UITableView::attachCellUpdateHandler(UpdateHandler handler) { mCellUpdateHandler = handler; }
-void UITableView::attachCellSelectHandler(SelectHandler handler) { mCellSelectHandler = handler; }
+void UITableView::attachCellUpdateHandler(UpdateHandler handler)   { mCellUpdateHandler = handler; }
+void UITableView::attachCellSelectHandler(SelectHandler handler)   { mCellSelectHandler = handler; }
 
-UITableViewCell& UITableView::cellForRow(uint8_t row)            { return mpCells[row]; }
+UITableViewCell& UITableView::cellForRow(uint8_t row)              { return mpCells[row]; }
 
 void UITableView::highlightCellAt(uint8_t row) {
     cellForRow(row).setHighlighted(true);
@@ -184,5 +130,61 @@ void UITableView::moveCursor(CursorDirection direction) {
                 reDraw();
             }
         } break;
+    }
+}
+
+// ---------------------------------------------------------- //
+//                      UITableViewCell                       //
+// ---------------------------------------------------------- //
+
+UITableViewCell::UITableViewCell() : UIView(Frame{0,0,0,0}) {
+    init();
+}
+
+UITableViewCell::UITableViewCell(Frame frame) : UIView(frame) {
+    init();
+}
+
+void UITableViewCell::init() {
+    mpText = NULL;
+    mTextLen = 0;
+
+    mHighlighted = false;
+    mHighlightedColor = BLACK_COLOR;
+}
+
+void UITableViewCell::setText(char *text, uint32_t len) {
+    mpText = text;
+    mTextLen = len;
+
+    reDraw();
+}
+
+void UITableViewCell::setHighlighted(bool highlighted) { mHighlighted = highlighted; }
+void UITableViewCell::setHighlightedColor(Color color) { mHighlightedColor = color;  }
+
+void UITableViewCell::reDraw() {
+    // use highlighted color if cell is highlighted
+    UIView::reDrawWithBackground( mHighlighted ? &mHighlightedColor : &mBackgroundColor );
+
+    uint8_t len = mTextLen > 15 ? 18 : mTextLen;
+
+    char str[18];
+    strncpy(str, mpText, 15);
+    for (uint8_t i = 15; i < 18; i++)
+        str[i] = '.';
+
+    for (uint8_t i = 0; i < len; i++) {
+        const uint8_t padding = mFrame.x + 4;
+        const uint8_t charSpacing = (i * 1);
+        const uint8_t charPos = (i * 5);
+
+        const uint8_t x = padding + charSpacing + charPos;
+        const uint8_t y = mFrame.y + 1;
+
+        const uint8_t *bitmap = Font[int(str[i])];
+
+        if   (mHighlighted) LCDDisplay.drawFont(Point2D{x, y}, bitmap, WHITE_COLOR, mHighlightedColor);
+        else                LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
     }
 }
