@@ -5,7 +5,7 @@
  *      Author: huang
  */
 
-#include <MP3/VS1053B.hpp>
+#include <MP3/Drivers/VS1053B.hpp>
 #include <stddef.h>
 #include "io.hpp"
 #include <stdio.h>
@@ -98,7 +98,7 @@ VS1053B::VS1053B() {
     writeREG(SCI_CLOCKF, 0x6000);                   // set multiplier to 3.0x
     setVolume(150);
 
-    while(!isReady()) delay_ms(3);
+    while(!isReady()) delay_ms(0.003);
 }
 
 VS1053B::~VS1053B() {
@@ -123,7 +123,8 @@ void VS1053B::softReset() {
     writeSCI(SCI_MODE, SM_RESET);
 }
 
-bool VS1053B::isReady() { return mpDREQ->getLevel(); }
+bool VS1053B::isReady()           { return mpDREQ->getLevel(); }
+bool VS1053B::isPlaybackEnabled() { return mIsPlaying; }
 
 uint16_t VS1053B::readSCI(uint8_t addr) {
     uint16_t data;
@@ -189,7 +190,8 @@ void VS1053B::writeREG(uint8_t addr, uint16_t reg) {
 }
 
 void VS1053B::setVolume(uint8_t volume) {
-    writeSCI(SCI_VOL, ((volume << 8) | volume));  // VS_VOL 16-bit reg controls the volume for both the left and right channels
+    // VS_VOL 16-bit reg controls the volume for both the left and right channels
+    writeSCI(SCI_VOL, ((volume << 8) | volume));
 }
 
 VS1053B::HeaderData VS1053B::getHDAT() {
@@ -199,27 +201,37 @@ VS1053B::HeaderData VS1053B::getHDAT() {
 }
 
 uint16_t VS1053B::getByteRate() {
-    writeSCI(SCI_WRAMADDR, 0x1E29); // resync
+    writeSCI(SCI_WRAMADDR, 0x1E05); // byteRate address
     return readSCI(SCI_WRAM);
 }
 
 void VS1053B::sendEndFillBytes() {
-    writeSCI(SCI_WRAMADDR, 0x1E06); // resync
+    writeSCI(SCI_WRAMADDR, 0x1E06); // endFillByte address
     uint8_t byte = readSCI(SCI_WRAM);
-    printf("endFillByte: %x\n", byte);
     for (uint32_t i = 0; i < 2052; i++)
         transfer(byte);
 }
 
-void VS1053B::playSong() {
+void VS1053B::enablePlayback() {
     writeREG(SCI_MODE, SCI_MODE_STREAM);
-    writeSCI(SCI_WRAMADDR, 0x1E29); // resync
+    writeSCI(SCI_WRAMADDR, 0x1E29); // Automatic Resync selector
     writeSCI(SCI_WRAM, 0);
 
     clearDecodeTime();
+
+    mIsPlaying = true;
+}
+
+void VS1053B::disablePlayback() {
+    writeREG(SCI_MODE, SCI_MODE_CANCEL);
+
+    // wait for DREQ to be high and SM_CANCEL to be cleared...
+
+
+    mIsPlaying = false;
 }
 
 void VS1053B::buffer(uint8_t *songData, uint32_t len) {
-    while (!isReady()) delay_ms(3);
+    while (!isReady()) delay_ms(0.003);
     writeSDI(songData, len);
 }

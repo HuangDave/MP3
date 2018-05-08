@@ -8,23 +8,62 @@
 #ifndef MUSICPLAYER_HPP_
 #define MUSICPLAYER_HPP_
 
-#include "MP3/UITableView.hpp"
+#include <MP3/Drivers/VS1053B.hpp>
+
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "scheduler_task.hpp"
+
+class DecodeTask;
 
 class MusicPlayer {
 
 protected:
 
-    // song selection menu
-    UITableView *tableView;
+    VS1053B &mDecoder = VS1053B::sharedInstance();
 
-    void updateSongItem(UITableViewCell &cell, uint32_t index);
+    DecodeTask *mDecodeTask;
 
-    void refresh();
+    QueueHandle_t mStreamQueue;
+    char *mpCurrentSongName;
+
+    void buffer(uint8_t songData[32]);
 
 public:
 
     MusicPlayer();
     virtual ~MusicPlayer();
+
+    DecodeTask* getDecodeTask() const;
+
+    void play(char *songName);
+    void pause();
+
+    void incrementVolume();
+    void decrementVolume();
+};
+
+class DecodeTask: public scheduler_task {
+
+protected:
+
+    VS1053B &mDecoder = VS1053B::sharedInstance();
+    QueueHandle_t *mQueue;
+
+public:
+    DecodeTask(uint8_t priority) : scheduler_task("buffer_song", 2000, priority), mQueue(NULL) { };
+
+    void setQueue(QueueHandle_t *queue) { mQueue = queue;     };
+
+    bool run(void *) {
+        uint8_t *data = NULL;
+        while(xQueueReceive(mQueue, data, portMAX_DELAY)) {
+            if (mDecoder.isPlaybackEnabled()) {
+                mDecoder.buffer(data, VS1053B_BUFFER_SIZE);
+            }
+        }
+        return true;
+    };
 };
 
 #endif /* MUSICPLAYER_H_ */

@@ -23,16 +23,19 @@
 #include "tasks.hpp"
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "scheduler_task.hpp"
+
 #include "storage.hpp"
 #include "io.hpp"
+
 #include "utilities.h"
 
-#include "MP3/ST7735.hpp"
-#include "MP3/VS1053B.hpp"
+#include "MP3/UserInterface.hpp"
 
-#include "MP3/UITableView.hpp"
-
-QueueHandle_t streamQueue;
+#include "MP3/Drivers/ST7735.hpp"
+#include "MP3/Drivers/VS1053B.hpp"
+#include "MP3/MusicPlayer.hpp"
+#include "MP3/UI/UITableView.hpp"
 
 char *list[] {
     "t8vvUZ 8zHPJvS2n",
@@ -48,43 +51,21 @@ char *list[] {
 };
 uint32_t songCount = 10;
 
+UserInterface *ui;
+MusicPlayer *player;
+
+UITableView *mpSongMenu;
+UIView *mpNowPlaying;
+
 void updateSongeItem(UITableViewCell &cell, uint32_t index) {
+    //printf("cursor on: %s", list[index]);
     cell.setText(list[index], strlen(list[index]));
 }
 
-void setupSongMenu() {
-
-    UITableView menu = UITableView(Frame { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
-    menu.setRowHeight(10);
-    menu.setMininmumRows(8);
-    menu.setItemCount(songCount);
-    menu.attachCellUpdateHandler(&updateSongeItem);
-    menu.update();
-
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
-    delay_ms(1000);
-    menu.cursorDidMoveDown();
+void userDidSelectSong(uint32_t index) {
+    printf("playing song: %s\n", list[index]);
+    //player->play(list[index]);
 }
-
 
 void printHDAT() {
 
@@ -117,7 +98,18 @@ void printHDAT() {
 
 int main(void) {
 
-    setupSongMenu();
+    // Initialize player
+    player = new MusicPlayer();
+
+    ui = new UserInterface(PRIORITY_HIGH);
+
+    ui->songMenu().setItemCount(songCount);
+    ui->songMenu().attachCellUpdateHandler(&updateSongeItem);
+    ui->songMenu().attachCellSelectHandler(&userDidSelectSong);
+
+
+    scheduler_add_task(ui);
+    scheduler_start();
 
 //    printf("status: %x\n", MP3.readREG(0x1));
 //    printf("mode %x\n",    MP3.readREG(0x0));
@@ -158,6 +150,5 @@ int main(void) {
 
     printHDAT(); */
 
-    while (1);
     return 0;
 }

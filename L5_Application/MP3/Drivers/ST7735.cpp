@@ -5,10 +5,12 @@
  *      Author: huang
  */
 
-#include <MP3/ST7735.hpp>
+#include <MP3/Drivers/ST7735.hpp>
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+
 #include "utilities.h"
 
 #define ST7735_SWRESET (0x01)   // Software RESET
@@ -103,7 +105,7 @@ void ST7735::toggleDisplay(bool on) {
 }
 
 void ST7735::selectDC() {
-    mpDC->setLow();
+        mpDC->setLow();
 }
 
 void ST7735::deselectDC() {
@@ -143,77 +145,6 @@ void ST7735::writeColor(Color color, uint32_t repeat) {
         repeat--;
     }
 }
-
-/*
-void ST7735::setAddrWindow(Point2D p0, Point2D p1) {
-    writeCommand(ST7735_CASET);                     // write x-component of address window
-    writeWord(p0.x);
-    writeWord(p1.x);
-    writeCommand(ST7735_RASET);                     // write y-component of address window
-    writeWord(p0.y);
-    writeWord(p1.y);
-    writeCommand(ST7735_RAMWR);                     // write to memory
-}
-
-void ST7735::drawPixel(Point2D p, Color c) {
-
-    if ((p.x < 0) || (p.x >= ST7735_TFT_WIDTH) ||   // ensure point is within the boundary of the screen
-        (p.y < 0) || (p.y >= ST7735_TFT_HEIGHT))
-        return;
-
-    Point2D p1;
-    p1.x = p.x + 1; p1.y = p.y + 1;
-
-    setAddrWindow(p, p1);
-    writeColor(c);
-}
-
-void ST7735::drawLine(Point2D p0, Point2D p1, Color c) {
-    int16_t slope = abs(p1.y - p0.y) > abs(p1.x - p0.x);
-
-	if (slope) {
-		swap(p0.x, p0.y);
-		swap(p1.x, p1.y);
-	}
-
-	if (p0.x > p1.x) {
-		swap(p0.x, p1.x);
-		swap(p0.y, p1.y);
-	}
-
-	int16_t dx, dy;
-	dx = p1.x - p0.x;
-	dy = abs(p1.y - p0.y);
-
-	int16_t err = dx / 2;
-	int16_t ystep;
-
-	if (p0.y < p1.y) ystep = 1;
-	else 	         ystep = -1;
-
-	for (; p0.x <= p1.x; p0.x++) {
-		if (slope) drawPixel(Point2D { p0.y, p0.x }, c);
-		else       drawPixel(Point2D { p0.x, p0.y }, c);
-
-		err -= dy;
-
-		if (err < 0) {
-			p0.y += ystep;
-			err += dx;
-		}
-	}
-}
-
-void ST7735::fillRect(Point2D p0, Point2D p1, Color c) {
-	int16_t width, height;
-	width = p1.x - p0.x + 1;
-	height = p1.y - p0.y + 1;
-
-	setAddrWindow(p0, p1);
-	writeColor(c, width * height);
-}
- */
-
 
 void ST7735::setAddrWindow(Frame frame) {
     // Using orientation: X-Y exchange

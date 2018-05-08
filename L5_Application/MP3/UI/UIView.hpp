@@ -8,8 +8,8 @@
 #ifndef UIVIEW_HPP_
 #define UIVIEW_HPP_
 
-#include "gfx.h"
-#include "ST7735.hpp"
+#include "../gfx.h"
+#include <stddef.h>
 
 class UIView {
 
@@ -23,13 +23,14 @@ public:
     void setSize(Size2D size);
     void setBackgroundColor(Color c);
 
-     void reDraw(Color *color = NULL);
+    virtual void reDraw();
+    virtual void reDrawWithBackground(Color *color);
 
 protected:
 
     Frame mFrame;
     Color mBackgroundColor;
-    
+
 };
 
 #endif /* UIVIEW_HPP_ */

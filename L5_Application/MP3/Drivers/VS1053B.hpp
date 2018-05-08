@@ -8,7 +8,7 @@
 #ifndef VS1053B_HPP_
 #define VS1053B_HPP_
 
-#include "../L4/LabSPI.hpp"
+#include "SPI.hpp"
 
 #define MP3 VS1053B::sharedInstance()
 
@@ -38,7 +38,7 @@
  * Therefore, on RESEET, the intial SPI clock rate needs to be 12.288Mhz / 4 = ~3MHz.
  * Once the SCI_CLOCKF multiplier is set, the SPI clk can be changed correspondingly to faster speeds.
  */
-class VS1053B: public LabSPI {
+class VS1053B: public SPI {
 
 protected:
 
@@ -153,6 +153,8 @@ public:
     */
     bool isReady();
 
+    bool isPlaybackEnabled();
+
     /**
      * Read 32-bit decoded header data.
      * If no data is decoded, the data will be empty.
@@ -179,7 +181,8 @@ public:
     /**
      * Enable device audio playback.
      */
-    void playSong();
+    void enablePlayback();
+    void disablePlayback();
 
     /**
      * Buffer song data to decoder.
