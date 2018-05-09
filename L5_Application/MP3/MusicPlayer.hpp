@@ -18,7 +18,6 @@ class DecodeTask;
 
 typedef struct {
     char *name;
-    char *extension;
 } SongInfo;
 
 class MusicPlayer {
@@ -51,7 +50,7 @@ public:
     DecodeTask* getDecodeTask() const;
 
     static std::vector<SongInfo> getSongList() { return mSongList; };
-    static uint32_t getSongCount() { return mSongList.size(); };
+    static uint32_t getSongCount()             { return mSongList.size(); };
 
     void fetchSongs();
 

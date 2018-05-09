@@ -52,10 +52,6 @@ void MusicPlayer::fetchSongs() {
                 info.name = new char[len];
                 strcpy(info.name, fileInfo.fname);
 
-                for (uint32_t i = 0; i < len; i++)
-                    printf("%c", info.name[i]);
-                printf("\n");
-
                 mSongList.push_back(info);
             }
         }
@@ -67,8 +63,11 @@ void MusicPlayer::play(char *songName) {
 
     mpCurrentSongName = songName;
 
-    char dirPrefix[] = "1:";
-    const char *fileName = (char *) malloc(strlen(dirPrefix) + strlen(mpCurrentSongName) - 1);
+    const char dirPrefix[] = "1:";
+    char *fileName = (char *) malloc(strlen(dirPrefix) + strlen(mpCurrentSongName) - 1);
+    strcpy(fileName, dirPrefix);
+    strcat(fileName, mpCurrentSongName);
+
     FILE *f = fopen(fileName, "r"); // read current song in SD Card
 
     // get file size
