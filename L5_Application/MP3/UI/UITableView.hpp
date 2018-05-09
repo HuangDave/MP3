@@ -15,6 +15,7 @@ class UITableViewCell;
 class UITableViewDataSource {
 
 public:
+
     virtual uint32_t numberOfItems() const = 0;
     virtual uint8_t numberOfRows() const = 0;
     virtual uint8_t rowHeight() const = 0;
@@ -24,15 +25,13 @@ public:
 class UITableViewDelegate {
 
 public:
+
     virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) = 0;
 };
 
 class UITableView: public UIView {
 
 public:
-
-    typedef void (*UpdateHandler)(UITableViewCell &cell, uint32_t index);
-    typedef void (*SelectHandler)(uint32_t index);
 
     typedef enum {
         DIRECTION_UP   = 0,
@@ -42,22 +41,17 @@ public:
     UITableView(Frame frame);
     virtual ~UITableView();
 
-    void setDataSource(UITableViewDataSource *dataSource);
-    void setDelegate(UITableViewDelegate *delegate);
+    void setDataSource(UITableViewDataSource* const dataSource);
+    void setDelegate(UITableViewDelegate* const delegate);
 
     void reDraw() override;
     void reDraw(uint8_t row);
 
     void updateTableIfNeeded();
 
-    void setMininmumRows(uint8_t rows);
-    void setRowHeight(uint8_t height);
     void setDividerColor(Color color);
-    void setItemCount(uint32_t count);
-    void selectCurrentRow();
 
-    void attachCellUpdateHandler(UpdateHandler handler);
-    void attachCellSelectHandler(SelectHandler handler);
+    void selectCurrentRow();
 
     void highlightCellAt(uint8_t row);
     void unhighlightCellAt(uint8_t row);
@@ -73,9 +67,6 @@ protected:
 
     /// Array of all reusable cells.
     UITableViewCell *mpCells;
-
-    UpdateHandler mCellUpdateHandler;
-    SelectHandler mCellSelectHandler;
 
     /// Total number of reusable rows in table view.
     uint8_t mRows;
@@ -111,6 +102,8 @@ public:
     UITableViewCell(Frame frame);
 
     void setText(char *text, uint32_t len);
+    char* getText() const { return mpText; };
+
     void setHighlighted(bool highlighted);
     void setHighlightedColor(Color color);
 

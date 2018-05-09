@@ -16,13 +16,7 @@
 
 #include <MP3/UI/UITableView.hpp>
 
-//class UIView;
-//class UITableView;
-//class UITableViewCell;
-//class UITableViewDataSource;
-//class UITableViewDelegate;
-
-class UserInterface: public scheduler_task, virtual UITableViewDataSource, virtual UITableViewDelegate {
+class UserInterface: public scheduler_task, virtual protected UITableViewDataSource, virtual protected UITableViewDelegate {
 
 protected:
 
@@ -30,6 +24,15 @@ protected:
     UIView *mpNowPlaying;
 
     std::vector<UIView *> mpSubviews;
+
+    // UITableView Datasource & Delegate
+
+    virtual uint32_t numberOfItems() const final;
+    virtual uint8_t numberOfRows() const final;
+    virtual uint8_t rowHeight() const final;
+    virtual void cellForIndex(UITableViewCell &cell, uint32_t index) final;
+
+    virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
 
 public:
 
@@ -39,17 +42,9 @@ public:
     bool init();
     bool run(void *);
 
-    UITableView& songMenu() { return *mpSongMenu; };
-
     void addSubview(UIView *view);
     void updateViews();
 
-    virtual uint32_t numberOfItems() const final;
-    virtual uint8_t numberOfRows() const final;
-    virtual uint8_t rowHeight() const final;
-    virtual void cellForIndex(UITableViewCell &cell, uint32_t index) final;
-
-    virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
 };
 
 #endif /* USERINTERFACE_HPP_ */

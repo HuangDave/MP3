@@ -25,7 +25,6 @@ UITableView::UITableView(Frame frame) : UIView(frame) {
     mItemCount = 0;
     mInvalidated = true;
     mDividerColor = BLACK_COLOR;
-    mCellUpdateHandler = NULL;
 }
 
 UITableView::~UITableView() {
@@ -66,25 +65,20 @@ void UITableView::reDraw() {
     for (uint8_t row = 0; row < mRows; row++) {
         uint32_t index = mIndexStart + row;
         if (index >= mItemCount) break;
-        mCellUpdateHandler(cellForRow(row), index);
+        (*mDataSource).cellForIndex(cellForRow(row), index);
+        //mCellUpdateHandler(cellForRow(row), index);
         reDraw(row);
     }
 }
 
 void UITableView::reDraw(uint8_t row)                              { cellForRow(row).reDraw(); }
 
-void UITableView::setDataSource(UITableViewDataSource *dataSource) { mDataSource = dataSource; }
-void UITableView::setDelegate(UITableViewDelegate *delegate)       { mDelegate = delegate; }
+void UITableView::setDataSource(UITableViewDataSource* const dataSource) { mDataSource = dataSource; }
+void UITableView::setDelegate(UITableViewDelegate* const delegate)       { mDelegate = delegate; }
 
-void UITableView::setMininmumRows(uint8_t rows)                    { mRows = rows;        mInvalidated = true; }
-void UITableView::setRowHeight(uint8_t height)                     { mRowHeight = height; mInvalidated = true; }
 void UITableView::setDividerColor(Color color)                     { mDividerColor = color;                    }
-void UITableView::setItemCount(uint32_t count)                     { mItemCount = count;                       }
 
-void UITableView::selectCurrentRow()                               { mCellSelectHandler(mIndexStart + mCursorPos); }
-
-void UITableView::attachCellUpdateHandler(UpdateHandler handler)   { mCellUpdateHandler = handler; }
-void UITableView::attachCellSelectHandler(SelectHandler handler)   { mCellSelectHandler = handler; }
+void UITableView::selectCurrentRow()                               { (*mDelegate).didSelectCellAt(cellForRow(mCursorPos), mIndexStart + mCursorPos); }
 
 UITableViewCell& UITableView::cellForRow(uint8_t row)              { return mpCells[row]; }
 
@@ -117,6 +111,8 @@ void UITableView::moveCursor(CursorDirection direction) {
             }
         } break;
         case DIRECTION_DOWN: {
+            if (mCursorPos == mItemCount - 1) return;
+
             // clamp cursor to bottom
             if (mCursorPos < mRows-1) { // cursor is not already at the bottom
                 mCursorPos++;

@@ -49,7 +49,7 @@ char *list[] {
     "pRqUnYZYQCf4pqf",
     "ckt dtqINXOPHEcV"
 };
-uint32_t songCount = 10;
+static uint32_t songCount = 10;
 
 UserInterface *ui;
 MusicPlayer *player;
@@ -100,14 +100,12 @@ int main(void) {
 
     // Initialize player
     player = new MusicPlayer();
-
     ui = new UserInterface(PRIORITY_HIGH);
 
-    ui->songMenu().setItemCount(songCount);
-    ui->songMenu().attachCellUpdateHandler(&updateSongeItem);
-    ui->songMenu().attachCellSelectHandler(&userDidSelectSong);
+    //ui->songMenu().setItemCount(songCount);
 
 
+    //scheduler_add_task(player);
     scheduler_add_task(ui);
     scheduler_start();
 

@@ -9,16 +9,30 @@
 #define MUSICPLAYER_HPP_
 
 #include <MP3/Drivers/VS1053B.hpp>
-
+#include <vector>
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "scheduler_task.hpp"
 
 class DecodeTask;
 
+typedef struct {
+    char *name;
+    char *extension;
+} SongInfo;
+
 class MusicPlayer {
 
 protected:
+
+    typedef enum {
+        STOPPED    = (1 << 0),
+        PLAYING    = (1 << 1),
+        CANCELLING = (1 << 2),
+    } PlayerState;
+
+    static std::vector<SongInfo> mSongList;
+    static uint32_t mSongCount;
 
     VS1053B &mDecoder = VS1053B::sharedInstance();
 
@@ -27,7 +41,7 @@ protected:
     QueueHandle_t mStreamQueue;
     char *mpCurrentSongName;
 
-    void buffer(uint8_t songData[32]);
+    PlayerState mState;
 
 public:
 
@@ -35,6 +49,11 @@ public:
     virtual ~MusicPlayer();
 
     DecodeTask* getDecodeTask() const;
+
+    static std::vector<SongInfo> getSongList() { return mSongList; };
+    static uint32_t getSongCount() { return mSongList.size(); };
+
+    void fetchSongs();
 
     void play(char *songName);
     void pause();
@@ -53,13 +72,16 @@ protected:
 public:
     DecodeTask(uint8_t priority) : scheduler_task("buffer_song", 2000, priority), mQueue(NULL) { };
 
-    void setQueue(QueueHandle_t *queue) { mQueue = queue;     };
+    void setQueue(QueueHandle_t *queue) { mQueue = queue; };
 
     bool run(void *) {
         uint8_t *data = NULL;
         while(xQueueReceive(mQueue, data, portMAX_DELAY)) {
             if (mDecoder.isPlaybackEnabled()) {
-                mDecoder.buffer(data, VS1053B_BUFFER_SIZE);
+                for (uint8_t i = 32; i <= 512; i = i + 32) {
+                    mDecoder.buffer(data, VS1053B_BUFFER_SIZE);
+                    data += i;
+                }
             }
         }
         return true;

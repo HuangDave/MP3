@@ -7,11 +7,21 @@
 
 #include <MP3/MusicPlayer.hpp>
 
+#include <stdlib.h>
+#include <stdio.h>
+#include "string.h"
+#include <iostream>
+#include "ff.h"
+
+
+std::vector<SongInfo> MusicPlayer::mSongList;
+
 MusicPlayer::MusicPlayer() {
-    //mDecoder = VS1053B::sharedInstance();
     mDecodeTask = new DecodeTask(PRIORITY_MEDIUM);
     mStreamQueue = xQueueCreate(2, sizeof(uint8_t));
     mpCurrentSongName = NULL;
+
+    fetchSongs();
 }
 
 MusicPlayer::~MusicPlayer() {
@@ -20,27 +30,66 @@ MusicPlayer::~MusicPlayer() {
 
 DecodeTask* MusicPlayer::getDecodeTask() const { return mDecodeTask; };
 
+void MusicPlayer::fetchSongs() {
+    mSongList.empty();
+
+    DIR directory;
+
+    if (f_opendir(&directory, "1:") == FR_OK) {
+        static FILINFO fileInfo;
+
+        while (f_readdir(&directory, &fileInfo) == FR_OK) {
+            if (fileInfo.fname[0] == 0) break;
+
+            const char *mp3[] = { ".mp3", ".MP3" };
+            char *ext= strrchr(fileInfo.fname,'.');
+
+            // only retreive mp3 file names...
+            if (!(fileInfo.fattrib & AM_DIR) && (strcmp(ext, mp3[0]) || strcmp(ext, mp3[1]))) {
+                SongInfo info;
+
+                uint8_t len = strlen(fileInfo.fname);
+                info.name = new char[len];
+                strcpy(info.name, fileInfo.fname);
+
+                for (uint32_t i = 0; i < len; i++)
+                    printf("%c", info.name[i]);
+                printf("\n");
+
+                mSongList.push_back(info);
+            }
+        }
+    }
+}
+
 void MusicPlayer::play(char *songName) {
     mDecoder.enablePlayback();
 
     mpCurrentSongName = songName;
 
-    while (mDecoder.isPlaybackEnabled()) {
-        // fetch audio file from SD Card...
-        uint8_t *data = new uint8_t[VS1053B_BUFFER_SIZE];
+    char dirPrefix[] = "1:";
+    const char *fileName = (char *) malloc(strlen(dirPrefix) + strlen(mpCurrentSongName) - 1);
+    FILE *f = fopen(fileName, "r"); // read current song in SD Card
 
-        buffer(data);
+    // get file size
+    fseek(f, 0, SEEK_END);
+    const uint32_t fileSize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    // queue 512 bytes for decoder
+    for (uint32_t i = 0; i < fileSize / 512; i++) {
+        if (mState & (STOPPED | CANCELLING)) break;
+
+        uint8_t *data = new uint8_t[512];
+        fread(data, 1, 512, f);
+        xQueueSend(mStreamQueue, &data, portMAX_DELAY);
     }
+
+    fclose(f);
 }
 
 void MusicPlayer::pause() {
     mDecoder.disablePlayback();
-}
-
-void MusicPlayer::buffer(uint8_t songData[32]) {
-    if (xQueueSend(mStreamQueue, &songData, portMAX_DELAY)) {
-        //decodeSong();
-    }
 }
 
 void MusicPlayer::incrementVolume() {
