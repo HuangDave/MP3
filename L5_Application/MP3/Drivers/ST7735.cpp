@@ -88,7 +88,7 @@ void ST7735::toggleSleep(bool on) {
         selectCS();
         transfer(on ? ST7735_DISPON : ST7735_DISPOFF);
         deselectCS();
-        delay_ms(500);
+        delay_ms(10);
     }
     deselectDC();
 }
@@ -99,7 +99,7 @@ void ST7735::toggleDisplay(bool on) {
         selectCS();
         transfer(on ? ST7735_DISPON : ST7735_DISPOFF);
         deselectCS();
-        delay_ms(500);
+        delay_ms(10);
     }
     deselectDC();
 }

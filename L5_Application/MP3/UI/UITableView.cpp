@@ -17,6 +17,7 @@
 
 UITableView::UITableView(Frame frame) : UIView(frame) {
     mpCells = NULL;
+    mpDelegate = NULL;
     mRows = 0;
     mRowHeight = 0;
     mCursorPos = 0;
@@ -24,12 +25,10 @@ UITableView::UITableView(Frame frame) : UIView(frame) {
     mIndexEnd = 0;
     mItemCount = 0;
     mInvalidated = true;
-    mDividerColor = BLACK_COLOR;
 }
 
 UITableView::~UITableView() {
-    mDataSource = NULL;
-    mDelegate   = NULL;
+    mpDelegate   = NULL;
 
     delete mpCells;
     mpCells = NULL;
@@ -39,9 +38,7 @@ void UITableView::updateTableIfNeeded() {
 
     if ( (mpCells == NULL && mRows > 0) || mInvalidated) {
 
-        mRows      = (*mDataSource).numberOfRows();
-        mItemCount = (*mDataSource).numberOfItems();
-        mRowHeight = (*mDataSource).rowHeight();
+        mItemCount = (*mpDelegate).numberOfItems();
 
         mpCells = new UITableViewCell[mRows];
         for (uint8_t i = 0; i < mRows; i++) {
@@ -65,7 +62,7 @@ void UITableView::reDraw() {
     for (uint8_t row = 0; row < mRows; row++) {
         uint32_t index = mIndexStart + row;
         if (index >= mItemCount) break;
-        (*mDataSource).cellForIndex(cellForRow(row), index);
+        (*mpDelegate).cellForIndex(cellForRow(row), index);
         //mCellUpdateHandler(cellForRow(row), index);
         reDraw(row);
     }
@@ -73,12 +70,12 @@ void UITableView::reDraw() {
 
 void UITableView::reDraw(uint8_t row)                              { cellForRow(row).reDraw(); }
 
-void UITableView::setDataSource(UITableViewDataSource* const dataSource) { mDataSource = dataSource; }
-void UITableView::setDelegate(UITableViewDelegate* const delegate)       { mDelegate = delegate; }
+void UITableView::setDelegate(UITableViewDelegate* const delegate)       { mpDelegate = delegate; }
 
-void UITableView::setDividerColor(Color color)                     { mDividerColor = color;                    }
+void UITableView::setNumberOfRows(uint8_t rows)                    { mRows = rows; }
+void UITableView::setRowHeight(uint8_t height)                     { mRowHeight = height; }
 
-void UITableView::selectCurrentRow()                               { (*mDelegate).didSelectCellAt(cellForRow(mCursorPos), mIndexStart + mCursorPos); }
+void UITableView::selectCurrentRow()                               { (*mpDelegate).didSelectCellAt(cellForRow(mCursorPos), mIndexStart + mCursorPos); }
 
 UITableViewCell& UITableView::cellForRow(uint8_t row)              { return mpCells[row]; }
 

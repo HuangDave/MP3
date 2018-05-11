@@ -14,12 +14,6 @@
 #include <MP3/Drivers/ST7735.hpp>
 #include <MP3/MusicPlayer.hpp>
 
-//#include <MP3/UI/UITableView.hpp>
-
-UserInterface::UserInterface(uint8_t priority) : scheduler_task("ui", 2048, priority)  {
-
-}
-
 UserInterface::~UserInterface() {
     delete mpSongMenu;   mpSongMenu   = NULL;
     delete mpNowPlaying; mpNowPlaying = NULL;
@@ -32,12 +26,13 @@ bool UserInterface::init() {
 
     // Initialize song menu
     const uint8_t kMenuHeight = 100;
-    //const uint8_t kRowHeight  = 10;
-    //const uint8_t kNumRows    = 10;
+    const uint8_t kMenuRowHeight = 10;
+    const uint8_t kNumRows = 10;
 
     mpSongMenu = new UITableView(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
-    (*mpSongMenu).setDataSource((UITableViewDataSource *)this);
     (*mpSongMenu).setDelegate((UITableViewDelegate *)this);
+    (*mpSongMenu).setRowHeight(kMenuRowHeight);
+    (*mpSongMenu).setNumberOfRows(kNumRows);
     addSubview(mpSongMenu);
 
     // Initialize Now Player view
@@ -47,11 +42,13 @@ bool UserInterface::init() {
     (*mpNowPlaying).setBackgroundColor(BLUE_COLOR);
     addSubview(mpNowPlaying);
 
-    updateViews();
+    //updateViews();
     return true;
 }
 
 bool UserInterface::run(void *) {
+
+    updateViews();
 
     // TODO: change to external interrupts
 
@@ -61,6 +58,8 @@ bool UserInterface::run(void *) {
         else if (SW.getSwitch(3)) { mpSongMenu->selectCurrentRow(); vTaskDelay(1000);    }
         vTaskDelay(1);
     }
+
+    return true;
 }
 
 void UserInterface::addSubview(UIView *view) {
@@ -79,17 +78,10 @@ uint32_t UserInterface::numberOfItems() const {
     return MusicPlayer::getSongCount();
 }
 
-uint8_t UserInterface::numberOfRows() const {
-    return 10;
-}
-
-uint8_t UserInterface::rowHeight() const {
-    return 10;
-}
-
 void UserInterface::cellForIndex(UITableViewCell &cell, uint32_t index) {
     SongInfo info = MusicPlayer::getSongList()[index];
 
+    // TODO: display names w/o .mp3 or MP3 extension...
     const uint8_t newLen = strlen(info.name) - 3;
     char fmtName[newLen];
     strncpy(fmtName, info.name, newLen);

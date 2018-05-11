@@ -17,10 +17,6 @@
 #define ST7735_TFT_WIDTH  128
 #define ST7735_TFT_HEIGHT 160
 
-// swap width and height of LCD display for drawing due to X-Y exchange orientation
-#define SCREEN_WIDTH      160
-#define SCREEN_HEIGHT     128
-
 /**
  * ST7735 operates at ~12MHz.
  *

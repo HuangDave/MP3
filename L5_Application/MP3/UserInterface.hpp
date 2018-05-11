@@ -16,7 +16,7 @@
 
 #include <MP3/UI/UITableView.hpp>
 
-class UserInterface: public scheduler_task, virtual protected UITableViewDataSource, virtual protected UITableViewDelegate {
+class UserInterface: public scheduler_task, virtual protected UITableViewDelegate {
 
 protected:
 
@@ -25,18 +25,15 @@ protected:
 
     std::vector<UIView *> mpSubviews;
 
-    // UITableView Datasource & Delegate
+    // UITableViewDelegate
 
     virtual uint32_t numberOfItems() const final;
-    virtual uint8_t numberOfRows() const final;
-    virtual uint8_t rowHeight() const final;
     virtual void cellForIndex(UITableViewCell &cell, uint32_t index) final;
-
     virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
 
 public:
 
-    UserInterface(uint8_t priority);
+    UserInterface(uint8_t priority) : scheduler_task("ui", 1024, priority) { };
     virtual ~UserInterface();
 
     bool init();

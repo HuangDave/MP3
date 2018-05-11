@@ -12,20 +12,10 @@
 
 class UITableViewCell;
 
-class UITableViewDataSource {
-
-public:
-
-    virtual uint32_t numberOfItems() const = 0;
-    virtual uint8_t numberOfRows() const = 0;
-    virtual uint8_t rowHeight() const = 0;
-    virtual void cellForIndex(UITableViewCell &cell, uint32_t index) = 0;
-};
-
 class UITableViewDelegate {
-
 public:
-
+    virtual uint32_t numberOfItems() const = 0;
+    virtual void cellForIndex(UITableViewCell &cell, uint32_t index) = 0;
     virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) = 0;
 };
 
@@ -41,15 +31,14 @@ public:
     UITableView(Frame frame);
     virtual ~UITableView();
 
-    void setDataSource(UITableViewDataSource* const dataSource);
     void setDelegate(UITableViewDelegate* const delegate);
 
     void reDraw() override;
-    void reDraw(uint8_t row);
 
     void updateTableIfNeeded();
 
-    void setDividerColor(Color color);
+    void setNumberOfRows(uint8_t rows);
+    void setRowHeight(uint8_t height);
 
     void selectCurrentRow();
 
@@ -62,8 +51,7 @@ public:
 
 protected:
 
-    UITableViewDataSource *mDataSource;
-    UITableViewDelegate   *mDelegate;
+    UITableViewDelegate *mpDelegate;
 
     /// Array of all reusable cells.
     UITableViewCell *mpCells;
@@ -72,7 +60,7 @@ protected:
     uint8_t mRows;
     /// Height of each table view rows
     uint8_t mRowHeight;
-    Color mDividerColor;
+
     /// total number of items
     uint32_t mItemCount;
     /// current highlighted row, should be between { 0, mRows - 1 }
@@ -83,6 +71,7 @@ protected:
     bool mInvalidated;
 
     UITableViewCell& cellForRow(uint8_t row);
+    void reDraw(uint8_t row);
 };
 
 class UITableViewCell: public UIView {
@@ -94,6 +83,7 @@ protected:
     bool mHighlighted;
     Color mHighlightedColor;
 
+    // Common Init
     void init();
 
 public:

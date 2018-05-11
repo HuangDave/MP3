@@ -35,7 +35,7 @@ protected:
 
     VS1053B &mDecoder = VS1053B::sharedInstance();
 
-    DecodeTask *mDecodeTask;
+    DecodeTask *mpDecodeTask;
 
     QueueHandle_t mStreamQueue;
     char *mpCurrentSongName;

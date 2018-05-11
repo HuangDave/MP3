@@ -17,25 +17,23 @@
 std::vector<SongInfo> MusicPlayer::mSongList;
 
 MusicPlayer::MusicPlayer() {
-    mDecodeTask = new DecodeTask(PRIORITY_MEDIUM);
+    mpDecodeTask = new DecodeTask(PRIORITY_MEDIUM);
     mStreamQueue = xQueueCreate(2, sizeof(uint8_t));
     mpCurrentSongName = NULL;
 
     fetchSongs();
 }
 
-MusicPlayer::~MusicPlayer() {
-    // TODO Auto-generated destructor stub
-}
+MusicPlayer::~MusicPlayer() { }
 
-DecodeTask* MusicPlayer::getDecodeTask() const { return mDecodeTask; };
+DecodeTask* MusicPlayer::getDecodeTask() const { return mpDecodeTask; };
 
 void MusicPlayer::fetchSongs() {
     mSongList.empty();
 
     DIR directory;
 
-    if (f_opendir(&directory, "1:") == FR_OK) {
+    if (f_opendir(&directory, "1:") == FR_OK) {     // read SD Card directory
         static FILINFO fileInfo;
 
         while (f_readdir(&directory, &fileInfo) == FR_OK) {
@@ -44,9 +42,12 @@ void MusicPlayer::fetchSongs() {
             const char *mp3[] = { ".mp3", ".MP3" };
             char *ext= strrchr(fileInfo.fname,'.');
 
-            // only retreive mp3 file names...
+            // only retreive names of mp3 files
             if (!(fileInfo.fattrib & AM_DIR) && (strcmp(ext, mp3[0]) || strcmp(ext, mp3[1]))) {
                 SongInfo info;
+
+                // TODO: get full filename
+                // TODO: save a copy of filename without the .mp3 or .MP3 extension
 
                 uint8_t len = strlen(fileInfo.fname);
                 info.name = new char[len];

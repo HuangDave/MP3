@@ -12,7 +12,8 @@
 
 #define MP3 VS1053B::sharedInstance()
 
-#define VS1053B_BUFFER_SIZE 32
+#define VS1053B_BLOCK_SIZE  (512)
+#define VS1053B_BUFFER_SIZE (32)
 
 // Device SCI Register Addresses
 #define SCI_MODE        (0x0)
@@ -46,7 +47,7 @@ protected:
 
     /// used for active low asynchronous reset
     LabGPIO *mpRESET;
-    /// Data Request bus from device. Signals execution of register update if driven low.
+    /// Data Request status from device. Signals execution of register update if driven low.
     LabGPIO *mpDREQ;
     /// XDCS / BSYNC: Data chip select / byte sync
     LabGPIO *mpXDCS;

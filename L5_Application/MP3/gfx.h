@@ -4,6 +4,10 @@
 
 #include "LPC17xx.h"
 
+// swap width and height of LCD display for drawing due to X-Y exchange orientation
+#define SCREEN_WIDTH      160
+#define SCREEN_HEIGHT     128
+
 #define WHITE_COLOR Color { 0xFF, 0xFF, 0xFF }
 #define RED_COLOR   Color { 0xFF, 0x00, 0x00 }
 #define GREEN_COLOR Color { 0x00, 0xFF, 0x00 }
