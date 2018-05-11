@@ -39,6 +39,11 @@
 
 #include "ff.h"
 
+#include <iostream>
+#include "printf_lib.h"
+
+QueueHandle_t queue;
+
 UserInterface *ui;
 MusicPlayer *player;
 
@@ -83,43 +88,19 @@ void testAudio() {
     */
 
     const uint32_t fileSize = 1024 * 2.850;
-    uint8_t *data = new uint8_t[fileSize];
-    FRESULT result = Storage::read("1:44_128.mp3", data, fileSize - 1);
-    printf("%s\n\n", result == FR_OK ? "FILE OK" : "FILE NOT OK");
+    //uint8_t *data = new uint8_t[fileSize];
+
+    //FRESULT result = Storage::read("1:44_128.mp3", data, fileSize - 1);
+    //printf("%s\n\n", result == FR_OK ? "FILE OK" : "FILE NOT OK");
 
     MP3.setVolume(25);
-    MP3.enterSDIMode();
 
-    int a = 0, b = 0;
-    while (!MP3.isReady());
-
-    for (uint32_t i = 0; i < fileSize; i++) {
-        if (b == 512) {
-            b = 0;
-        }
-        if (a == 32) {
-            a = 0;
-            while (!MP3.isReady());
-        }
-
-        //printf("%x ", data[i]);
-
-        MP3.transfer(*data++);
-        a++; b++;
+    for (uint32_t i = 0; i < fileSize/512; i++) {
+        uint8_t data[512] = { 0 };
+        Storage::read("1:44_32_32.mp3", data, 512, i * 512);
+        for (uint32_t j = 0; j < 512/32; j++)
+            MP3.buffer(data + (j*32), 32);
     }
-
-    /*
-    for (uint32_t i = 32; i < fileSize; i = i + 32) {
-        while (!MP3.isReady());
-        //MP3.buffer(data, 32);
-        MP3.transfer(data, 32);
-        data += 32;
-    } */
-
-    MP3.exitSDIMode();
-
-    //player = new MusicPlayer();
-    //player->play("1:44_32_32.mp3");
 
     //MP3.sendEndFillBytes();
 
@@ -139,6 +120,7 @@ void testAudio() {
 }
 
 int main(void) {
+
 
     // Initialize player
     //player = new MusicPlayer();

@@ -80,22 +80,23 @@ VS1053B& VS1053B::sharedInstance() {
 }
 
 VS1053B::VS1053B() {
-    init(SSP0, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_8);
+    init(SSP0, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_1);
 
     // set initial pclk to 3MHz = 12MHz / 4 for write at reset
-    SSPn->CPSR = 1;                                // minimum prescaler of 2
+    SSPn->CPSR = 48;                                // minimum prescaler of 2
     SSPn->CR0 |= (0 << 8);
 
     mpDREQ  = configureGPIO(1, 30, false, false);   // Configure P1.30 as input for DREQ
     mpRESET = configureGPIO(0,  1, true, true);     // configure P0.1  for RESET
     mpCS    = configureGPIO(0,  0, true, true);     // configure P0.0  for CS
-    //mpSDCS  = configureGPIO(1, 31, true, true);     // Configure P1.31 for SDCS
+    mpSDCS  = configureGPIO(1, 31, true, true);     // Configure P1.31 for SDCS
     mpXDCS  = configureGPIO(2,  7, true, true);     // Configure P1.29 for XDCS
 
     reset();
 
+    //writeREG(SCI_MODE, 0x4842);
     writeREG(SCI_MODE, SCI_MODE_DEFAULT);
-    writeREG(SCI_CLOCKF, 0x2000);                   // set multiplier to 3.0x
+    writeREG(SCI_CLOCKF, 0x8000);                   // set multiplier to 3.0x
     writeREG(SCI_AUDATA, 0xAC45);
     setVolume(75);
 
@@ -106,7 +107,7 @@ VS1053B::VS1053B() {
 VS1053B::~VS1053B() {
     delete mpDREQ;  mpDREQ  = NULL;
     delete mpRESET; mpRESET = NULL;
-    //delete mpSDCS;  mpSDCS  = NULL;
+    delete mpSDCS;  mpSDCS  = NULL;
     delete mpXDCS;  mpXDCS  = NULL;
 }
 
@@ -126,14 +127,14 @@ void VS1053B::softReset() {
     writeSCI(SCI_MODE, SM_RESET);
 }
 
-bool VS1053B::isReady()           { return mpDREQ->getLevel(); }
+bool VS1053B::isReady()           { return (*mpDREQ).getLevel(); }
 bool VS1053B::isPlaybackEnabled() { return mIsPlaying; }
 
 uint16_t VS1053B::readSCI(uint8_t addr) {
     uint16_t data;
+    while(!isReady());
     selectCS();
     {
-        while(!isReady());
         // while(!isReady()) delay_ms(0.03);
         //SSPn->CPSR = 2; // SCK needs to match CLKI / 7 for SCI rw
         transfer(SCI_READ);
@@ -149,11 +150,11 @@ void VS1053B::writeSCI(uint8_t addr, uint16_t data) {
 }
 
 void VS1053B::writeSCI(uint8_t addr, uint16_t *data, uint32_t len) {
+    while(!isReady());
     selectCS();
     {
-        while(!isReady());
         // while (!isReady()) delay_ms(0.03);
-        //SSPn->CPSR = 2; // SCK needs to match CLKI / 7 for SCI rw
+        //SSPn->CPSR = 4; // SCK needs to match CLKI / 7 for SCI rw
         transfer(SCI_WRITE);
         transfer(addr);
         for (uint32_t i = 0; i < len; i++) {
@@ -162,7 +163,6 @@ void VS1053B::writeSCI(uint8_t addr, uint16_t *data, uint32_t len) {
         }
     }
     deselectCS();
-    while(!isReady());
 }
 
 void VS1053B::writeSDI(uint8_t data) {
@@ -170,10 +170,11 @@ void VS1053B::writeSDI(uint8_t data) {
 }
 
 void VS1053B::writeSDI(uint8_t *data, uint32_t len) {
+    while(!isReady());
     if (xSemaphoreTake(spiMutex[mPeripheral], portMAX_DELAY)) {
         mpXDCS->setLow();
         {
-            //ssSSPn->CPSR = 1; // SCK needs to match CLKI / 4 for for SDI writes
+            //SSPn->CPSR = 4; // SCK needs to match CLKI / 4 for for SDI writes
             //for (uint8_t i = 0; i < len; i++) printf("sending: %x\n", data[i]);
             //printf("\n");
             //while(!isReady());
@@ -235,7 +236,7 @@ void VS1053B::enablePlayback() {
     //writeSCI(SCI_WRAMADDR, 0x1E29); // Automatic Resync selector
     //writeSCI(SCI_WRAM, 0);
 
-    //clearDecodeTime();
+    clearDecodeTime();
 
     mIsPlaying = true;
 }
@@ -250,7 +251,5 @@ void VS1053B::disablePlayback() {
 }
 
 void VS1053B::buffer(uint8_t *songData, uint32_t len) {
-    while(!isReady());
-    //while (!isReady()) delay_ms(0.003);
     writeSDI(songData, len);
 }
