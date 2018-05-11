@@ -83,7 +83,7 @@ VS1053B::VS1053B() {
     init(SSP0, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_1);
 
     // set initial pclk to 3MHz = 12MHz / 4 for write at reset
-    SSPn->CPSR = 48;                                // minimum prescaler of 2
+    SSPn->CPSR = 44;                                // minimum prescaler of 2
     SSPn->CR0 |= (0 << 8);
 
     mpDREQ  = configureGPIO(1, 30, false, false);   // Configure P1.30 as input for DREQ
@@ -96,12 +96,11 @@ VS1053B::VS1053B() {
 
     //writeREG(SCI_MODE, 0x4842);
     writeREG(SCI_MODE, SCI_MODE_DEFAULT);
-    writeREG(SCI_CLOCKF, 0x8000);                   // set multiplier to 3.0x
+    writeREG(SCI_CLOCKF, 0x6000);                   // set multiplier to 3.0x
     writeREG(SCI_AUDATA, 0xAC45);
     setVolume(75);
 
     while(!isReady());
-    //while(!isReady()) delay_ms(0.003);
 }
 
 VS1053B::~VS1053B() {
@@ -174,10 +173,7 @@ void VS1053B::writeSDI(uint8_t *data, uint32_t len) {
     if (xSemaphoreTake(spiMutex[mPeripheral], portMAX_DELAY)) {
         mpXDCS->setLow();
         {
-            //SSPn->CPSR = 4; // SCK needs to match CLKI / 4 for for SDI writes
-            //for (uint8_t i = 0; i < len; i++) printf("sending: %x\n", data[i]);
-            //printf("\n");
-            //while(!isReady());
+            //SSPn->CPSR = 2; // SCK needs to match CLKI / 4 for for SDI writes
             transfer(data, len);
         }
         mpXDCS->setHigh();

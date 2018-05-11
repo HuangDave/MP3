@@ -87,19 +87,20 @@ void testAudio() {
     printf("vol %x\n",     MP3.readREG(0xB));
     */
 
-    const uint32_t fileSize = 1024 * 2.850;
+    const uint32_t fileSize = 1024 * 1000 * 2.850;
     //uint8_t *data = new uint8_t[fileSize];
 
     //FRESULT result = Storage::read("1:44_128.mp3", data, fileSize - 1);
     //printf("%s\n\n", result == FR_OK ? "FILE OK" : "FILE NOT OK");
 
-    MP3.setVolume(25);
+    MP3.setVolume(35);
 
     for (uint32_t i = 0; i < fileSize/512; i++) {
         uint8_t data[512] = { 0 };
-        Storage::read("1:44_32_32.mp3", data, 512, i * 512);
-        for (uint32_t j = 0; j < 512/32; j++)
+        Storage::read("1:44_128_32.mp3", data, 512-1, i * 512);
+        for (uint32_t j = 0; j < 512/32; j++){
             MP3.buffer(data + (j*32), 32);
+        }
     }
 
     //MP3.sendEndFillBytes();
