@@ -12,10 +12,14 @@
 
 class UITableViewCell;
 
-class UITableViewDelegate {
+class UITableViewDataSource {
 public:
     virtual uint32_t numberOfItems() const = 0;
     virtual void cellForIndex(UITableViewCell &cell, uint32_t index) = 0;
+};
+
+class UITableViewDelegate {
+public:
     virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) = 0;
 };
 
@@ -31,6 +35,7 @@ public:
     UITableView(Frame frame);
     virtual ~UITableView();
 
+    void setDataSource(UITableViewDataSource* const dataSource);
     void setDelegate(UITableViewDelegate* const delegate);
 
     void reDraw() override;
@@ -51,6 +56,7 @@ public:
 
 protected:
 
+    UITableViewDataSource *mpDataSource;
     UITableViewDelegate *mpDelegate;
 
     /// Array of all reusable cells.

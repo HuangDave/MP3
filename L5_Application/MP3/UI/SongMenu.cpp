@@ -6,44 +6,75 @@
  */
 
 #include <MP3/UI/SongMenu.hpp>
-#include <string.h>
-#include <MP3/MusicPlayer.hpp>
 
+#include <stdlib.h>
 #include <stdio.h>
+#include "string.h"
+#include <iostream>
+#include "ff.h"
 
-SongMenu::SongMenu(Frame frame) : UIView(frame) {
+SongMenu::SongMenu(Frame frame) : UITableView(frame) {
 
-    // Initialize song menu
-    const uint8_t kMenuHeight = 100;
+    const uint8_t kMenuRowHeight = 10;
+    const uint8_t kNumRows = 10;
 
-    mpSongMenu = new UITableView(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
-    (*mpSongMenu).setDelegate((UITableViewDelegate *)this);
+    setDataSource((UITableViewDataSource *)this);
+    //setDelegate((UITableViewDelegate *)this);
+    setRowHeight(kMenuRowHeight);
+    setNumberOfRows(kNumRows);
 
-
+    fetchSongs();
 }
 
-SongMenu::~SongMenu() {
+SongMenu::~SongMenu() { }
 
+void SongMenu::fetchSongs() {
+    mSongList.empty();
+
+    DIR directory;
+
+    if (f_opendir(&directory, "1:") == FR_OK) {     // read SD Card directory
+        static FILINFO fileInfo;
+
+        while (f_readdir(&directory, &fileInfo) == FR_OK) {
+            if (fileInfo.fname[0] == 0) break;
+
+            const char *mp3[] = { ".mp3", ".MP3" };
+            char *ext= strrchr(fileInfo.fname,'.');
+
+            // only retreive names of mp3 files
+            if (!(fileInfo.fattrib & AM_DIR) && (strcmp(ext, mp3[0]) || strcmp(ext, mp3[1]))) {
+                SongInfo info;
+
+                // TODO: get full filename
+                // TODO: save a copy of filename without the .mp3 or .MP3 extension
+
+                uint8_t len = strlen(fileInfo.fname);
+                info.fmtName = new char[len];
+                strcpy(info.fmtName, fileInfo.fname);
+
+                len = fileInfo.lfsize;
+                printf("lfsize: %d\n", len);
+                info.fullName = new char[len];
+                strcpy(info.fullName, fileInfo.lfname);
+
+                for (uint8_t i = 0; i < len - 1; i++)
+                    printf("%c", info.fullName[i]);
+                printf("\n");
+
+                mSongList.push_back(info);
+            }
+        }
+    }
 }
 
-
-// UITableViewDelegate
+// UITableViewDataSource Implementation
 
 uint32_t SongMenu::numberOfItems() const {
-    return MusicPlayer::getSongCount();
+    return mSongList.size();
 }
 
 void SongMenu::cellForIndex(UITableViewCell &cell, uint32_t index) {
-    SongInfo info = MusicPlayer::getSongList()[index];
-
-    const uint8_t newLen = strlen(info.name) - 3;
-    char fmtName[newLen];
-    strncpy(fmtName, info.name, newLen);
-    //cell.setText(fmtName, newLen);
-
-    cell.setText(info.name, strlen(info.name));
-}
-
-void SongMenu::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
-    printf("now playing: %s", cell.getText());
+    SongInfo info = mSongList[index];
+    cell.setText(info.fmtName, strlen(info.fmtName));
 }

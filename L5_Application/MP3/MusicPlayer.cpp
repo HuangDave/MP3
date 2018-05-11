@@ -65,7 +65,7 @@ void MusicPlayer::play(char *songName) {
     mpCurrentSongName = songName;
 
     const char dirPrefix[] = "1:";
-    char *fileName = (char *) malloc(strlen(dirPrefix) + strlen(mpCurrentSongName) - 1);
+    char *fileName = (char *)malloc(strlen(dirPrefix) + strlen(mpCurrentSongName) - 1);
     strcpy(fileName, dirPrefix);
     strcat(fileName, mpCurrentSongName);
 

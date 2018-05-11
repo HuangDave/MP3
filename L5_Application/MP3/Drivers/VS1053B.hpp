@@ -36,7 +36,7 @@
  * When performing SCI reads, SPI clk should be ~(CLKI/7).
  * When performing SCI / SDI writes, SPI clk should be ~(CLKI/4).
  *
- * Therefore, on RESEET, the intial SPI clock rate needs to be 12.288Mhz / 4 = ~3MHz.
+ * Therefore, on RESET, the intial SPI clock rate needs to be 12.288Mhz / 4 = ~3MHz.
  * Once the SCI_CLOCKF multiplier is set, the SPI clk can be changed correspondingly to faster speeds.
  */
 class VS1053B: public SPI {
@@ -191,6 +191,9 @@ public:
      * @param len      Length of buffer (ideally 32).
      */
     void buffer(uint8_t *songData, uint32_t len);
+
+    void enterSDIMode();
+    void exitSDIMode();
 };
 
 #endif /* VS1053B_HPP_ */

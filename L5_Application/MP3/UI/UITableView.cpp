@@ -17,6 +17,7 @@
 
 UITableView::UITableView(Frame frame) : UIView(frame) {
     mpCells = NULL;
+    mpDataSource = NULL;
     mpDelegate = NULL;
     mRows = 0;
     mRowHeight = 0;
@@ -28,7 +29,8 @@ UITableView::UITableView(Frame frame) : UIView(frame) {
 }
 
 UITableView::~UITableView() {
-    mpDelegate   = NULL;
+    mpDataSource = NULL;
+    mpDelegate = NULL;
 
     delete mpCells;
     mpCells = NULL;
@@ -38,7 +40,7 @@ void UITableView::updateTableIfNeeded() {
 
     if ( (mpCells == NULL && mRows > 0) || mInvalidated) {
 
-        mItemCount = (*mpDelegate).numberOfItems();
+        mItemCount = (*mpDataSource).numberOfItems();
 
         mpCells = new UITableViewCell[mRows];
         for (uint8_t i = 0; i < mRows; i++) {
@@ -62,22 +64,22 @@ void UITableView::reDraw() {
     for (uint8_t row = 0; row < mRows; row++) {
         uint32_t index = mIndexStart + row;
         if (index >= mItemCount) break;
-        (*mpDelegate).cellForIndex(cellForRow(row), index);
-        //mCellUpdateHandler(cellForRow(row), index);
+        (*mpDataSource).cellForIndex(cellForRow(row), index);
         reDraw(row);
     }
 }
 
-void UITableView::reDraw(uint8_t row)                              { cellForRow(row).reDraw(); }
+void UITableView::reDraw(uint8_t row)                                    { cellForRow(row).reDraw(); }
 
+void UITableView::setDataSource(UITableViewDataSource* const dataSource) { mpDataSource = dataSource; }
 void UITableView::setDelegate(UITableViewDelegate* const delegate)       { mpDelegate = delegate; }
 
-void UITableView::setNumberOfRows(uint8_t rows)                    { mRows = rows; }
-void UITableView::setRowHeight(uint8_t height)                     { mRowHeight = height; }
+void UITableView::setNumberOfRows(uint8_t rows)                          { mRows = rows; }
+void UITableView::setRowHeight(uint8_t height)                           { mRowHeight = height; }
 
-void UITableView::selectCurrentRow()                               { (*mpDelegate).didSelectCellAt(cellForRow(mCursorPos), mIndexStart + mCursorPos); }
+void UITableView::selectCurrentRow()                                     { (*mpDelegate).didSelectCellAt(cellForRow(mCursorPos), mIndexStart + mCursorPos); }
 
-UITableViewCell& UITableView::cellForRow(uint8_t row)              { return mpCells[row]; }
+UITableViewCell& UITableView::cellForRow(uint8_t row)                    { return mpCells[row]; }
 
 void UITableView::highlightCellAt(uint8_t row) {
     cellForRow(row).setHighlighted(true);
@@ -167,6 +169,7 @@ void UITableViewCell::reDraw() {
     for (uint8_t i = 15; i < 18; i++)
         str[i] = '.';
 
+    // TODO: move to UILabel Class
     for (uint8_t i = 0; i < len; i++) {
         const uint8_t padding = mFrame.x + 4;
         const uint8_t charSpacing = (i * 1);

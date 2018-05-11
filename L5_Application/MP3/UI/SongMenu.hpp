@@ -9,23 +9,33 @@
 #define SONGMENU_HPP_
 
 #include <MP3/UI/UITableView.hpp>
+#include <vector>
 
-class SongMenu: public UIView, protected virtual UITableViewDelegate {
+class SongMenu final: public UITableView, protected virtual UITableViewDataSource {
 
 protected:
 
-    UITableView *mpSongMenu;
+    typedef struct {
+        char *fmtName;
+        char *fullName;
+    } SongInfo;
 
-    // UITableViewDelegate
+    /// Vector array of list of song names retreived from SD Card.
+    std::vector<SongInfo> mSongList;
+
+    /**
+     * Fetch list of songs from SD Card
+     */
+    void fetchSongs();
+
+    // UITableViewDataSource
 
     virtual uint32_t numberOfItems() const final;
     virtual void cellForIndex(UITableViewCell &cell, uint32_t index) final;
-    virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
 
 public:
 
     SongMenu(Frame frame);
-
     virtual ~SongMenu();
 };
 

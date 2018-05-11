@@ -163,10 +163,25 @@ void ST7735::fillRect(Frame frame, Color c) {
     writeColor(c, frame.width * frame.height);
 }
 
-void ST7735::drawFont(Point2D p, const uint8_t *bitmap, Color color, Color backgroundColor) {
-    setAddrWindow( Frame { p.x, p.y, 5, 8 } );
-    for (uint8_t y = 0; y < 5; y++) {
-        for (uint8_t x = 0; x < 8; x++) {
+void ST7735::drawFont(Point2D p, const uint8_t *font, Color color, Color backgroundColor) {
+    const uint8_t kFontWidth  = 5;
+    const uint8_t kFontHeight = 8;
+    drawBitmap(Frame { p.x, p.y, kFontWidth, kFontHeight }, font, color, backgroundColor);
+}
+
+void ST7735::drawBitmap(Frame frame, const uint8_t *bitmap, Color color, Color backgroundColor) {
+    setAddrWindow(frame);
+    for (uint8_t y = 0; y < frame.width; y++) {
+        for (uint8_t x = 0; x < frame.height; x++) {
+            writeColor( !!(bitmap[y] & (1 << x)) ? color : backgroundColor );
+        }
+    }
+}
+
+void ST7735::drawBitmap(Frame frame, const uint16_t *bitmap, Color color, Color backgroundColor) {
+    setAddrWindow(frame);
+    for (uint8_t y = 0; y < frame.width; y++) {
+        for (uint8_t x = 0; x < frame.height; x++) {
             writeColor( !!(bitmap[y] & (1 << x)) ? color : backgroundColor );
         }
     }

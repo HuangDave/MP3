@@ -55,8 +55,9 @@ public:
 
     void setAddrWindow(Frame frame);
     void fillRect(Frame frame, Color c);
-
-    void drawFont(Point2D p, const uint8_t *bitmap, Color color, Color backgroundColor);
+    void drawFont(Point2D p, const uint8_t *font, Color color, Color backgroundColor);
+    void drawBitmap(Frame frame, const uint8_t *bitmap, Color color, Color backgroundColor);
+    void drawBitmap(Frame frame, const uint16_t *bitmap, Color color, Color backgroundColor);
 };
 
 #endif /* ST7735_HPP_ */
