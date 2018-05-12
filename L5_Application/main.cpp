@@ -42,10 +42,10 @@
 #include <iostream>
 #include "printf_lib.h"
 
-QueueHandle_t queue;
-
 UserInterface *ui;
 MusicPlayer *player;
+
+QueueHandle_t queue;
 
 void printHDAT() {
 
@@ -76,62 +76,87 @@ void printHDAT() {
     printf("Sample Rate: %d\n", VS1053B::sampleRateLUT[sampleRate][id]);
 }
 
-void testAudio() {
-    /*
-    printf("status: %x\n", MP3.readREG(0x1));
-    printf("mode %x\n",    MP3.readREG(0x0));
-    printf("clockf: %x\n", MP3.readREG(0x3));
-    printf("AUDATA %x\n",  MP3.readREG(0x5));
-    printf("HDAT0: %x\n",  MP3.readREG(0x8));
-    printf("HDAT1: %x\n",  MP3.readREG(0x9));
-    printf("vol %x\n",     MP3.readREG(0xB));
-    */
+void fetch(void *) {
 
-    const uint32_t fileSize = 1024 * 1000 * 2.850;
-    //uint8_t *data = new uint8_t[fileSize];
+    const uint32_t fileSize = 1024 * 1000 * 11.074; //2.850;
 
-    //FRESULT result = Storage::read("1:44_128.mp3", data, fileSize - 1);
-    //printf("%s\n\n", result == FR_OK ? "FILE OK" : "FILE NOT OK");
+    MP3.setVolume(235);
+    MP3.enablePlayback();
 
-    MP3.setVolume(35);
+    const uint32_t size = 1024;
 
-    for (uint32_t i = 0; i < fileSize/512; i++) {
-        uint8_t data[512] = { 0 };
-        Storage::read("1:44_128_32.mp3", data, 512-1, i * 512);
-        for (uint32_t j = 0; j < 512/32; j++){
-            MP3.buffer(data + (j*32), 32);
+    while (1) {
+
+        for (uint32_t i = 0; i < fileSize/size; i++) {
+            uint8_t data[size] = { 0 };
+            Storage::read("1:rain_320.mp3", data, size, i * size);
+            xQueueSend(queue, data, portMAX_DELAY);
+            vTaskDelay(10);
+        }
+        vTaskSuspend(0);
+    }
+}
+
+void play(void *) {
+    const uint32_t size = 1024;
+
+    while (1) {
+        uint8_t data[size] = { 0 };
+        if (xQueueReceive(queue, data, portMAX_DELAY)) {
+            for (uint32_t j = 0; j < size/32; j++){
+                MP3.buffer(data + (j*32), 32);
+            }
         }
     }
+}
 
-    //MP3.sendEndFillBytes();
+void testAudio() {
+    const uint32_t fileSize = 1024 * 1000 * 11.074; //2.850;
 
-    printf("\n");
+    MP3.setVolume(235);
+    MP3.enablePlayback();
 
-    printf("status: %x\n", MP3.readREG(0x1));
-    printf("mode %x\n",    MP3.readREG(0x0));
-    printf("clockf: %x\n", MP3.readREG(0x3));
-    printf("AUDATA %x\n",  MP3.readREG(0x5));
-    printf("HDAT0: %x\n",  MP3.readREG(0x8));
-    printf("HDAT1: %x\n",  MP3.readREG(0x9));
-    printf("vol %x\n",     MP3.readREG(0xB));
+    uint32_t size = 1024;
 
-    printHDAT();
-
+    uint8_t data[1024] = { 0 };
+    for (uint32_t i = 0; i < fileSize/size; i++) {
+        Storage::read("1:rain_320.mp3", data, size, i * size);
+        for (uint32_t j = 0; j < size/32; j++){
+            MP3.buffer(data + (j*32), 32);
+        }
+        delay_ms(10);
+    }
     while (1);
 }
 
 int main(void) {
+    MP3.setVolume(235);
+    MP3.enablePlayback();
 
+    queue = xQueueCreate(3, sizeof(uint8_t) * 1024);
+
+    uint32_t STACK_SIZE = 1024 * 5;
+
+    //xTaskCreate(fetch, "fetch", STACK_SIZE, (void *)0, 1, 0 );
+    //xTaskCreate(play,  "play",  STACK_SIZE, (void *)0, 1, 0 );
+
+    //vTaskStartScheduler();
 
     // Initialize player
-    //player = new MusicPlayer();
+    player = new MusicPlayer();
     //ui = new UserInterface(PRIORITY_HIGH);
 
     //scheduler_add_task(player);
     //scheduler_add_task(ui);
-    //scheduler_start();
 
-    testAudio();
+
+
+
+    scheduler_start();
+
+    //testAudio();
+
+
 
     return 0;
 }

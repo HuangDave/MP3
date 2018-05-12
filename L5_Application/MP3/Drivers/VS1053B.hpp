@@ -41,6 +41,98 @@
  */
 class VS1053B: public SPI {
 
+public:
+
+    typedef enum {
+        STOPPED    = (1 << 0),
+        PLAYING    = (1 << 1),
+        CANCELLING = (1 << 2)
+    } DecoderState;
+
+    // 32-bit Decoded Header Data
+    typedef union {
+        uint32_t bytes;
+        struct {
+            // HDAT0
+            uint8_t  emphasis:       2;
+            uint8_t  original:       1;
+            uint8_t  copyright:      1;
+            uint8_t  extension:      2;
+            uint8_t  mode:           2; // 3: mono, 2: dual channel, 1: joint stereo, 0: stereo
+            uint8_t  private_bit:    1; //
+            uint8_t  pad_bit:        1; // 1: additional slot, 0: normal frame
+            uint8_t  samplerate:     2; // 3: reserved, 2: 32/16/8 kHz, 1: 48/24/12 kHz, 0: 44/22/11 kHz
+            uint8_t  bitrate:        4;
+            // HDAT1
+            uint8_t  protected_bit:  1;   // 1: no CRC, 0: CRC protected
+            uint8_t  layer:          2;   // layer: 0x3 = 1, 0x2 = 2, 0x1 = 3, 0x0 = reserved
+            uint8_t  id:             2;   // 0x3: ISO 11172-3 MPG 1.0
+            uint16_t syncword:      11;   // stream valid should be 2047
+        } __attribute__((packed));
+    } HeaderData;
+
+    static const uint16_t sampleRateLUT[4][4];
+
+    static VS1053B& sharedInstance();
+
+    virtual ~VS1053B();
+
+    /**
+     * Performs a hardware reset.
+     * RESET is toggled low for 2ms.
+     * When RESET is driven high, wait for DREQ to be driven high before continueing.
+     */
+    void reset();
+
+    /**
+     * Performs a software reset by setting the SM_CANCEL bit of the SCI_MODE register.
+     */
+    void softReset();
+
+    /**
+    * Checks DREQ to determine if the device is performing a register update.
+    * When a register update is executed, DREQ is driven low.
+    *
+    * @return Returns TRUE if DREQ is driven high.
+    */
+    bool isReady();
+
+    DecoderState getState();
+
+    /**
+     * Read 32-bit decoded header data.
+     * If no data is decoded, the data will be empty.
+     * @return Returns a HeaderData.
+     */
+    HeaderData getHDAT();
+
+    /**
+    * Sets the volumes of the device.
+    * The max volume is 0x00 while lowest volume is 0xFE.
+    *
+    * @param volume uint8_t ranging from 0x00 to 0xFE (0 - 254)
+    */
+    void setVolume(uint8_t volume);
+
+    /**
+     * Reset current decode time to 0:00.
+     */
+    void clearDecodeTime();
+
+    /**
+     * Enable device audio playback.
+     */
+    void enablePlayback();
+    void disablePlayback();
+
+    /**
+     * Buffer song data to decoder.
+     * @param songData Song data to buffer.
+     * @param len      Length of buffer (ideally 32).
+     */
+    void buffer(uint8_t *songData, uint32_t len);
+
+
 protected:
 
     static VS1053B *instance;
@@ -54,10 +146,11 @@ protected:
     /// Set to high to disable decoder SD read
     LabGPIO *mpSDCS;
 
-    /// TRUE if the device is currently playing music.
-    bool mIsPlaying;
+    DecoderState mState;
 
     VS1053B();
+
+    // SCI R/W
 
     /**
      * Read a data through SCI port.
@@ -81,6 +174,8 @@ protected:
      */
     void writeSCI(uint8_t addr, uint16_t *data, uint32_t len);
 
+    // SDI Write
+
     /**
      * Send a byte of data using the SDI port for decoding.
      * @param data Byte of song data to send.
@@ -88,44 +183,7 @@ protected:
     void writeSDI(uint8_t data);
     void writeSDI(uint8_t *data, uint32_t len);
 
-    /**
-     * Write to a SCI Register.
-     * @param addr SCI Register Address to write to.
-     * @param reg  Register data.
-     */
-    void writeREG(uint8_t addr, uint16_t reg);
-
-public:
-
-    // 32-bit Decoded Header Data
-    typedef union {
-        uint32_t bytes;
-
-        struct {
-            // HDAT0
-            uint8_t  emphasis:       2;
-            uint8_t  original:       1;
-            uint8_t  copyright:      1;
-            uint8_t  extension:      2;
-            uint8_t  mode:           2; // 3: mono, 2: dual channel, 1: joint stereo, 0: stereo
-            uint8_t  private_bit:    1; //
-            uint8_t  pad_bit:        1; // 1: additional slot, 0: normal frame
-            uint8_t  samplerate:     2; // 3: reserved, 2: 32/16/8 kHz, 1: 48/24/12 kHz, 0: 44/22/11 kHz
-            uint8_t  bitrate:        4;
-
-            // HDAT1
-            uint8_t  protected_bit:  1;   // 1: no CRC, 0: CRC protected
-            uint8_t  layer:          2;   // layer: 0x3 = 1, 0x2 = 2, 0x1 = 3, 0x0 = reserved
-            uint8_t  id:             2;   // 0x3: ISO 11172-3 MPG 1.0
-            uint16_t syncword:      11;   // stream valid should be 2047
-        } __attribute__((packed));
-    } HeaderData;
-
-    static const uint16_t sampleRateLUT[4][4];
-
-    static VS1053B& sharedInstance();
-
-    virtual ~VS1053B();
+    // SCI Register R/W
 
     /**
      * Read a SCI register.
@@ -135,65 +193,12 @@ public:
     uint16_t readREG(uint8_t addr);
 
     /**
-     * Performs a hardware reset.
-     * RESET is toggled low for 2ms.
-     * When RESET is driven high, wait for DREQ to be driven high before continueing.
+     * Write to a SCI Register.
+     * @param addr SCI Register Address to write to.
+     * @param reg  Register data.
      */
-    void reset();
+    void writeREG(uint8_t addr, uint16_t reg);
 
-    /**
-     * Performs a software reset by setting the SM_CANCEL bit of the SCI_MODE register.
-     */
-    void softReset();
-
-    /**
-    * Checks DREQ to determine if the device is performing a register update.
-    * When a register update is executed, DREQ is driven low.
-    *
-    * @return Returns TRUE if DREQ is driven high.
-    */
-    bool isReady();
-
-    bool isPlaybackEnabled();
-
-    /**
-     * Read 32-bit decoded header data.
-     * If no data is decoded, the data will be empty.
-     * @return Returns a HeaderData.
-     */
-    HeaderData getHDAT();
-    uint16_t getByteRate();
-
-    /**
-    * Sets the volumes of the device.
-    * The max volume is 0x00 while lowest volume is 0xFE.
-    *
-    * @param volume uint8_t ranging from 0x00 to 0xFE (0 - 254)
-    */
-    void setVolume(uint8_t volume);
-
-    /**
-     * Reset current decode time to 0:00.
-     */
-    void clearDecodeTime();
-
-    void sendEndFillBytes();
-
-    /**
-     * Enable device audio playback.
-     */
-    void enablePlayback();
-    void disablePlayback();
-
-    /**
-     * Buffer song data to decoder.
-     * @param songData Song data to buffer.
-     * @param len      Length of buffer (ideally 32).
-     */
-    void buffer(uint8_t *songData, uint32_t len);
-
-    void enterSDIMode();
-    void exitSDIMode();
 };
 
 #endif /* VS1053B_HPP_ */

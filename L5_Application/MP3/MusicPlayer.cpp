@@ -13,20 +13,18 @@
 #include <iostream>
 #include "ff.h"
 
-
-std::vector<SongInfo> MusicPlayer::mSongList;
+//std::vector<SongInfo> MusicPlayer::mSongList;
 
 MusicPlayer::MusicPlayer() {
-    mpDecodeTask = new DecodeTask(PRIORITY_MEDIUM);
-    mStreamQueue = xQueueCreate(2, sizeof(uint8_t));
+    mStreamQueue = xQueueCreate(3, sizeof(uint8_t) * 1024);
     mpCurrentSongName = NULL;
 
-    fetchSongs();
+    //fetchSongs();
+    scheduler_add_task(new BufferMusicTask(PRIORITY_LOW, mStreamQueue));
+    scheduler_add_task(new StreamMusicTask(PRIORITY_LOW, mStreamQueue));
 }
 
 MusicPlayer::~MusicPlayer() { }
-
-DecodeTask* MusicPlayer::getDecodeTask() const { return mpDecodeTask; };
 
 void MusicPlayer::fetchSongs() {
     mSongList.empty();
@@ -78,7 +76,7 @@ void MusicPlayer::play(char *songName) {
 
     // queue 512 bytes for decoder
     for (uint32_t i = 0; i < fileSize / 512; i++) {
-        if (mState & (STOPPED | CANCELLING)) break;
+        //if (mState & (VS1053B::STOPPED | VS1053B::CANCELLING)) break;
 
         uint8_t *data = new uint8_t[512];
         fread(data, 1, 512, f);

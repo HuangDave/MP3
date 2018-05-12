@@ -57,7 +57,8 @@ typedef enum {
     SC_MULT_2x   = 0x2000,
     SC_MULT_2_5x = 0x4000,
     SC_MULT_3x   = 0x6000,
-    SC_MULT_3_5x = 0x8000
+    SC_MULT_3_5x = 0x8000,
+    SC_MULT_4x   = 0xA000
 } SCI_CLOCKF_OPTIONS;
 
 typedef enum {
@@ -82,22 +83,20 @@ VS1053B& VS1053B::sharedInstance() {
 VS1053B::VS1053B() {
     init(SSP0, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_1);
 
-    // set initial pclk to 3MHz = 12MHz / 4 for write at reset
-    SSPn->CPSR = 44;                                // minimum prescaler of 2
+    // set initial pclk to ~1.7MHz = 12MHz / 4 for write at reset
+    SSPn->CPSR = 16;                                        // minimum prescaler of 2
     SSPn->CR0 |= (0 << 8);
 
-    mpDREQ  = configureGPIO(1, 30, false, false);   // Configure P1.30 as input for DREQ
-    mpRESET = configureGPIO(0,  1, true, true);     // configure P0.1  for RESET
-    mpCS    = configureGPIO(0,  0, true, true);     // configure P0.0  for CS
-    mpSDCS  = configureGPIO(1, 31, true, true);     // Configure P1.31 for SDCS
-    mpXDCS  = configureGPIO(2,  7, true, true);     // Configure P1.29 for XDCS
+    mpDREQ  = configureGPIO(1, 30, false, false);           // Configure P1.30 as input for DREQ
+    mpRESET = configureGPIO(0,  1, true,  true);            // configure P0.1  for RESET
+    mpCS    = configureGPIO(0,  0, true,  true);            // configure P0.0  for CS
+    mpSDCS  = configureGPIO(1, 31, true,  true);            // Configure P1.31 for SDCS
+    mpXDCS  = configureGPIO(2,  7, true,  true);            // Configure P1.29 for XDCS
 
     reset();
 
-    //writeREG(SCI_MODE, 0x4842);
     writeREG(SCI_MODE, SCI_MODE_DEFAULT);
-    writeREG(SCI_CLOCKF, 0x6000);                   // set multiplier to 3.0x
-    writeREG(SCI_AUDATA, 0xAC45);
+    writeREG(SCI_CLOCKF, SC_MULT_4x);                       // set multiplier to 4.0x
     setVolume(75);
 
     while(!isReady());
@@ -113,21 +112,25 @@ VS1053B::~VS1053B() {
 void VS1053B::reset() {
     mpRESET->setHigh();
     mpRESET->setLow();
-    delay_ms(2);
+    delay_ms(1);
     mpRESET->setHigh();
 
     while(!isReady());
-    //while(!isReady()) delay_ms(0.003);
 
-    mIsPlaying = false;
+    mState = STOPPED;
 }
 
 void VS1053B::softReset() {
     writeSCI(SCI_MODE, SM_RESET);
 }
 
-bool VS1053B::isReady()           { return (*mpDREQ).getLevel(); }
-bool VS1053B::isPlaybackEnabled() { return mIsPlaying; }
+bool VS1053B::isReady() {
+    return (*mpDREQ).getLevel();
+}
+
+VS1053B::DecoderState VS1053B::getState() {
+    return mState;
+}
 
 uint16_t VS1053B::readSCI(uint8_t addr) {
     uint16_t data;
@@ -158,7 +161,7 @@ void VS1053B::writeSCI(uint8_t addr, uint16_t *data, uint32_t len) {
         transfer(addr);
         for (uint32_t i = 0; i < len; i++) {
             transferWord(data[i]);
-            while (!isReady()) delay_ms(0.03);
+            // while (!isReady());
         }
     }
     deselectCS();
@@ -173,27 +176,12 @@ void VS1053B::writeSDI(uint8_t *data, uint32_t len) {
     if (xSemaphoreTake(spiMutex[mPeripheral], portMAX_DELAY)) {
         mpXDCS->setLow();
         {
-            //SSPn->CPSR = 2; // SCK needs to match CLKI / 4 for for SDI writes
+            SSPn->CPSR = 4; // SCK needs to match CLKI / 4 for for SDI writes
             transfer(data, len);
         }
         mpXDCS->setHigh();
         xSemaphoreGive(spiMutex[mPeripheral]);
     }
-}
-
-void VS1053B::enterSDIMode() {
-    if (xSemaphoreTake(spiMutex[mPeripheral], portMAX_DELAY))
-        mpXDCS->setLow();
-}
-
-void VS1053B::exitSDIMode() {
-    mpXDCS->setHigh();
-    xSemaphoreGive(spiMutex[mPeripheral]);
-}
-
-void VS1053B::clearDecodeTime() {
-    writeSCI(SCI_DECODE_TIME, 0x00);
-    writeSCI(SCI_DECODE_TIME, 0x00);
 }
 
 uint16_t VS1053B::readREG(uint8_t addr) {
@@ -205,8 +193,14 @@ void VS1053B::writeREG(uint8_t addr, uint16_t reg) {
 }
 
 void VS1053B::setVolume(uint8_t volume) {
+    uint8_t vol = 0xFF - volume;
     // VS_VOL 16-bit reg controls the volume for both the left and right channels
-    writeSCI(SCI_VOL, ((volume << 8) | volume));
+    writeSCI(SCI_VOL, ((vol << 8) | vol));
+}
+
+void VS1053B::clearDecodeTime() {
+    writeSCI(SCI_DECODE_TIME, 0x00);
+    writeSCI(SCI_DECODE_TIME, 0x00);
 }
 
 VS1053B::HeaderData VS1053B::getHDAT() {
@@ -215,35 +209,26 @@ VS1053B::HeaderData VS1053B::getHDAT() {
     return hdat;
 }
 
-uint16_t VS1053B::getByteRate() {
-    writeSCI(SCI_WRAMADDR, 0x1E05); // byteRate address
-    return readSCI(SCI_WRAM);
-}
-
-void VS1053B::sendEndFillBytes() {
-    writeSCI(SCI_WRAMADDR, 0x1E06); // endFillByte address
-    uint8_t byte = readSCI(SCI_WRAM);
-    for (uint32_t i = 0; i < 2052; i++)
-        transfer(byte);
-}
-
 void VS1053B::enablePlayback() {
     writeREG(SCI_MODE, SCI_MODE_DEFAULT);
-    //writeSCI(SCI_WRAMADDR, 0x1E29); // Automatic Resync selector
-    //writeSCI(SCI_WRAM, 0);
+    writeREG(SCI_AUDATA, (AUDATA_44100 | AUDATA_STEREO));
+
+    writeSCI(SCI_WRAMADDR, 0x1E29); // Automatic Resync selector
+    writeSCI(SCI_WRAM, 0);
 
     clearDecodeTime();
 
-    mIsPlaying = true;
+    mState = PLAYING;
 }
 
 void VS1053B::disablePlayback() {
+    mState = CANCELLING;
     writeREG(SCI_MODE, SCI_MODE_CANCEL);
 
     // wait for DREQ to be high and SM_CANCEL to be cleared...
+    while (!isReady() || (readREG(SCI_MODE) & SM_CANCEL));
 
-
-    mIsPlaying = false;
+    mState = STOPPED;
 }
 
 void VS1053B::buffer(uint8_t *songData, uint32_t len) {
