@@ -16,11 +16,12 @@
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-// TODO: remove
-#include "storage.hpp"
-#include "io.hpp"
-
 class MusicPlayer {
+
+private:
+
+    class BufferMusicTask;
+    class StreamMusicTask;
 
 protected:
 
@@ -55,62 +56,29 @@ public:
 
     void incrementVolume();
     void decrementVolume();
+
 };
 
-class BufferMusicTask: public scheduler_task {
+class MusicPlayer::BufferMusicTask final: public scheduler_task {
 
 protected:
-
     VS1053B &mDecoder = VS1053B::sharedInstance();
     QueueHandle_t mQueue;
 
 public:
-
     BufferMusicTask(uint8_t priority, QueueHandle_t queue) : scheduler_task("buffer_song", 1024 * 3, priority), mQueue(queue) { };
-
-    bool run(void *) {
-        const uint32_t fileSize = 1024 * 1000 * 11.074; //2.850;
-        const uint32_t size = 1024;
-
-        while (1) {
-            for (uint32_t i = 0; i < fileSize/size; i++) {
-                uint8_t data[size] = { 0 };
-                Storage::read("1:rain_320.mp3", data, size, i * size);
-                xQueueSend(mQueue, data, portMAX_DELAY);
-                vTaskDelay(10);
-            }
-        }
-
-        return true;
-    };
+    bool run(void *);
 };
 
-
-class StreamMusicTask: public scheduler_task {
+class MusicPlayer::StreamMusicTask final: public scheduler_task {
 
 protected:
-
     VS1053B &mDecoder = VS1053B::sharedInstance();
     QueueHandle_t mQueue;
 
 public:
-
     StreamMusicTask(uint8_t priority, QueueHandle_t queue) : scheduler_task("stream_song", 1024 * 2, priority), mQueue(queue) { };
-
-    bool run(void *) {
-        const uint32_t size = 1024;
-
-        while (1) {
-            uint8_t data[size] = { 0 };
-            if (xQueueReceive(mQueue, data, portMAX_DELAY)) {
-                for (uint32_t j = 0; j < size/32; j++){
-                    MP3.buffer(data + (j*32), 32);
-                }
-            }
-        }
-
-        return true;
-    };
+    bool run(void *);
 };
 
 #endif /* MUSICPLAYER_H_ */

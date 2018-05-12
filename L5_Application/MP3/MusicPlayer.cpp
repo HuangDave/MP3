@@ -13,6 +13,10 @@
 #include <iostream>
 #include "ff.h"
 
+// TODO: remove
+#include "storage.hpp"
+#include "io.hpp"
+
 //std::vector<SongInfo> MusicPlayer::mSongList;
 
 MusicPlayer::MusicPlayer() {
@@ -95,4 +99,35 @@ void MusicPlayer::incrementVolume() {
 }
 void MusicPlayer::decrementVolume() {
 
+}
+
+bool MusicPlayer::BufferMusicTask::run(void *) {
+    const uint32_t fileSize = 1024 * 1000 * 11.074; //2.850;
+    const uint32_t size = 1024;
+
+    while (1) {
+        for (uint32_t i = 0; i < fileSize/size; i++) {
+            uint8_t data[size] = { 0 };
+            Storage::read("1:rain_320.mp3", data, size, i * size);
+            xQueueSend(mQueue, data, portMAX_DELAY);
+            vTaskDelay(10);
+        }
+    }
+
+    return true;
+}
+
+bool MusicPlayer::StreamMusicTask::run(void *) {
+    const uint32_t size = 1024;
+
+    while (1) {
+        uint8_t data[size] = { 0 };
+        if (xQueueReceive(mQueue, data, portMAX_DELAY)) {
+            for (uint32_t j = 0; j < size/32; j++){
+                MP3.buffer(data + (j*32), 32);
+            }
+        }
+    }
+
+    return true;
 }
