@@ -64,6 +64,9 @@ public:
         } __attribute__((packed));
     } SSP_SR;
 
+    /// Array containing a CS mutex for SSP0 and SSP1. Locks the SPI bus when a slave is selected.
+    static SemaphoreHandle_t spiMutex[2];
+
     /**
      * 1) Powers on SPPn peripheral
      * 2) Set peripheral clock
@@ -110,9 +113,6 @@ public:
     ~SPI();
 
 protected:
-
-    /// Array containing a CS mutex for SSP0 and SSP1. Locks the SPI bus when a slave is selected.
-    static SemaphoreHandle_t spiMutex[2];
 
     volatile LPC_SSP_TypeDef *SSPn;
 

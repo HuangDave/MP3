@@ -27,8 +27,6 @@
 #define ST7735_DISPON  (0x29)   // Display OFF
 #define ST7735_MADCTL  (0x36)   // Write Direction
 
-// #define swap(x, y) { x = x + y; y = x - y; x = x - y ; }
-
 ST7735* ST7735::instance = NULL;
 
 ST7735& ST7735::sharedInstance() {
@@ -37,7 +35,7 @@ ST7735& ST7735::sharedInstance() {
 }
 
 ST7735::ST7735() {
-    init(SSP0, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_1);
+    init(SSP1, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_1);
 
     // configure pclk to be ~12 MHz = (clk / pclk_div) / CPSDVSR * [SCR+1],
     // pclk_div = 1, CPSDVSR = 4, SCR = 0
@@ -47,8 +45,8 @@ ST7735::ST7735() {
     SSPn->CR1 &= ~(1 << 2);                         // clear MS to enable SSP as master
 
     mpCS    = configureGPIO(2, 7, true, true);      // configure P2.9 for CS (chip select)
-    mpDC    = configureGPIO(0, 1, true, true);      // configure P0.1 for A0 (D/C data transfer select)
-    mpRESET = configureGPIO(0, 0, true, true);      // configure P0.0 for RESET
+    mpDC    = configureGPIO(2, 8, true, true);      // configure P0.1 for A0 (D/C data transfer select)
+    mpRESET = configureGPIO(2, 9, true, true);      // configure P0.0 for RESET
 
     toggleRESET();
 }
@@ -75,7 +73,6 @@ void ST7735::toggleRESET() {
 
     // set initial display to white
     fillRect(Frame { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT }, WHITE_COLOR);
-    //fillRect(Point2D { 0,0 }, Point2D { 128, 160 }, WHITE_COLOR);
 
     // set orientation X-Y exchange
     writeCommand(ST7735_MADCTL);
@@ -85,9 +82,10 @@ void ST7735::toggleRESET() {
 void ST7735::toggleSleep(bool on) {
     selectDC();
     {
-        selectCS();
+        //selectCS();
+        SSPn->CPSR = 4;                                 // configure 12MHz pclk
         transfer(on ? ST7735_DISPON : ST7735_DISPOFF);
-        deselectCS();
+        //deselectCS();
         delay_ms(10);
     }
     deselectDC();
@@ -96,26 +94,33 @@ void ST7735::toggleSleep(bool on) {
 void ST7735::toggleDisplay(bool on) {
     selectDC();
     {
-        selectCS();
+        //selectCS();
+        SSPn->CPSR = 4;                                 // configure 12MHz pclk
         transfer(on ? ST7735_DISPON : ST7735_DISPOFF);
-        deselectCS();
+        //deselectCS();
         delay_ms(10);
     }
     deselectDC();
 }
 
 void ST7735::selectDC() {
+    if (xSemaphoreTake(spiMutex[mPeripheral], portMAX_DELAY)) {
         mpDC->setLow();
+        mpCS->setLow();
+    }
 }
 
 void ST7735::deselectDC() {
+    mpCS->setHigh();
     mpDC->setHigh();
+    xSemaphoreGive(spiMutex[mPeripheral]);
 }
 
 uint8_t ST7735::write(uint8_t data) {
     uint8_t byte = 0x00;
     selectCS();
     {
+        SSPn->CPSR = 4;                                 // configure 12MHz pclk
         byte = transfer(data);
     }
     deselectCS();
@@ -132,7 +137,8 @@ uint16_t ST7735::writeWord(uint16_t data) {
 void ST7735::writeCommand(uint8_t cmd) {
     selectDC();                                     // set D/C low to enable data command transmission
     {
-        write(cmd);
+        SSPn->CPSR = 4;                                 // configure 12MHz pclk
+        transfer(cmd);
     }
     deselectDC();
 }

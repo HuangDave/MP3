@@ -25,7 +25,6 @@ UITableView::UITableView(Frame frame) : UIView(frame) {
     mIndexStart = 0;
     mIndexEnd = 0;
     mItemCount = 0;
-    mInvalidated = true;
 }
 
 UITableView::~UITableView() {
@@ -38,7 +37,7 @@ UITableView::~UITableView() {
 
 void UITableView::updateTableIfNeeded() {
 
-    if ( (mpCells == NULL && mRows > 0) || mInvalidated) {
+    if (mpCells == NULL && mRows > 0) {
 
         mItemCount = (*mpDataSource).numberOfItems();
 

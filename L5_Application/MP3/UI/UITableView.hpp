@@ -69,12 +69,13 @@ protected:
 
     /// total number of items
     uint32_t mItemCount;
+
     /// current highlighted row, should be between { 0, mRows - 1 }
     uint8_t mCursorPos;
+
     // current index range of items that are displayed
     uint8_t mIndexStart;
     uint8_t mIndexEnd;
-    bool mInvalidated;
 
     UITableViewCell& cellForRow(uint8_t row);
     void reDraw(uint8_t row);

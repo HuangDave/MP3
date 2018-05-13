@@ -23,7 +23,6 @@ MusicPlayer::MusicPlayer() {
     mStreamQueue = xQueueCreate(3, sizeof(uint8_t) * 1024);
     mpCurrentSongName = NULL;
 
-    //fetchSongs();
     scheduler_add_task(new BufferMusicTask(PRIORITY_LOW, mStreamQueue));
     scheduler_add_task(new StreamMusicTask(PRIORITY_LOW, mStreamQueue));
 }
@@ -102,15 +101,18 @@ void MusicPlayer::decrementVolume() {
 }
 
 bool MusicPlayer::BufferMusicTask::run(void *) {
-    const uint32_t fileSize = 1024 * 1000 * 11.074; //2.850;
+    const uint32_t fileSize = 1024 * 1000 * 8.8685; //2.850;
     const uint32_t size = 1024;
 
     while (1) {
         for (uint32_t i = 0; i < fileSize/size; i++) {
             uint8_t data[size] = { 0 };
-            Storage::read("1:rain_320.mp3", data, size, i * size);
-            xQueueSend(mQueue, data, portMAX_DELAY);
-            vTaskDelay(10);
+            if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
+                Storage::read("1:44_128.mp3", data, size, i * size);
+                xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
+                xQueueSend(mQueue, data, portMAX_DELAY);
+            }
+            vTaskDelay(15);
         }
     }
 
@@ -126,6 +128,7 @@ bool MusicPlayer::StreamMusicTask::run(void *) {
             for (uint32_t j = 0; j < size/32; j++){
                 MP3.buffer(data + (j*32), 32);
             }
+            vTaskDelay(15);
         }
     }
 

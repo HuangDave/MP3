@@ -71,6 +71,7 @@ void SongMenu::fetchSongs() {
 // UITableViewDataSource Implementation
 
 uint32_t SongMenu::numberOfItems() const {
+    printf("list: %d\n", mSongList.size());
     return mSongList.size();
 }
 

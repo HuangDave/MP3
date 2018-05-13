@@ -87,19 +87,17 @@ VS1053B::VS1053B() {
     SSPn->CPSR = 16;                                        // minimum prescaler of 2
     SSPn->CR0 |= (0 << 8);
 
-    mpDREQ  = configureGPIO(1, 30, false, false);           // Configure P1.30 as input for DREQ
-    mpRESET = configureGPIO(0,  1, true,  true);            // configure P0.1  for RESET
-    mpCS    = configureGPIO(0,  0, true,  true);            // configure P0.0  for CS
-    mpSDCS  = configureGPIO(1, 31, true,  true);            // Configure P1.31 for SDCS
-    mpXDCS  = configureGPIO(2,  7, true,  true);            // Configure P1.29 for XDCS
+    mpDREQ  = configureGPIO(2, 4, false, false);           // Configure P2.4 as input for DREQ
+    mpRESET = configureGPIO(2, 3, true,  true);            // configure P2.3 for RESET
+    mpCS    = configureGPIO(2, 2, true,  true);            // configure P2.2 for CS
+    mpSDCS  = configureGPIO(2, 1, true,  true);            // Configure P2.1 for SDCS
+    mpXDCS  = configureGPIO(2, 0, true,  true);            // Configure P2.0 for XDCS
 
     reset();
 
     writeREG(SCI_MODE, SCI_MODE_DEFAULT);
     writeREG(SCI_CLOCKF, SC_MULT_4x);                       // set multiplier to 4.0x
-    setVolume(75);
-
-    while(!isReady());
+    setVolume(125);
 }
 
 VS1053B::~VS1053B() {
@@ -139,6 +137,7 @@ uint16_t VS1053B::readSCI(uint8_t addr) {
     {
         // while(!isReady()) delay_ms(0.03);
         //SSPn->CPSR = 2; // SCK needs to match CLKI / 7 for SCI rw
+        SSPn->CPSR = 16;                                        // minimum prescaler of 2
         transfer(SCI_READ);
         transfer(addr);
         data = transferWord(0x00);
@@ -157,6 +156,7 @@ void VS1053B::writeSCI(uint8_t addr, uint16_t *data, uint32_t len) {
     {
         // while (!isReady()) delay_ms(0.03);
         //SSPn->CPSR = 4; // SCK needs to match CLKI / 7 for SCI rw
+        SSPn->CPSR = 16;                                        // minimum prescaler of 2
         transfer(SCI_WRITE);
         transfer(addr);
         for (uint32_t i = 0; i < len; i++) {
