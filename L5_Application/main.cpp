@@ -16,43 +16,18 @@
  *          p r e e t . w i k i @ g m a i l . c o m
  */
 
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-
 #include "tasks.hpp"
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-#include "storage.hpp"
-#include "io.hpp"
-
-#include "utilities.h"
-
 #include "MP3/UserInterface.hpp"
-
-#include "MP3/Drivers/ST7735.hpp"
-#include "MP3/Drivers/VS1053B.hpp"
 #include "MP3/MusicPlayer.hpp"
-#include "MP3/UI/UITableView.hpp"
-
-#include "ff.h"
-
-#include <iostream>
-#include "printf_lib.h"
-
-UserInterface *ui;
-MusicPlayer *player;
 
 int main(void) {
-    MP3.setVolume(220);
-    MP3.enablePlayback();
-
-    // Initialize player
-    ui = new UserInterface(PRIORITY_HIGH);
-
-    player = new MusicPlayer();
+    
+    UserInterface *ui = new UserInterface(PRIORITY_HIGH);
+    MusicPlayer *player = new MusicPlayer();
 
     scheduler_add_task(new terminalTask(PRIORITY_HIGH));
     scheduler_add_task(ui);

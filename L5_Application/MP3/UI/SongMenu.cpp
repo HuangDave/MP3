@@ -50,16 +50,16 @@ void SongMenu::fetchSongs() {
                 // TODO: save a copy of filename without the .mp3 or .MP3 extension
 
                 uint8_t len = strlen(fileInfo.fname);
-                info.fmtName = new char[len];
-                strcpy(info.fmtName, fileInfo.fname);
+                info.name = new char[len];
+                strcpy(info.name, fileInfo.fname);
 
                 len = fileInfo.lfsize;
                 printf("lfsize: %d\n", len);
-                info.fullName = new char[len];
-                strcpy(info.fullName, fileInfo.lfname);
+                info.path = new char[len];
+                strcpy(info.path, fileInfo.lfname);
 
                 for (uint8_t i = 0; i < len - 1; i++)
-                    printf("%c", info.fullName[i]);
+                    printf("%c", info.path[i]);
                 printf("\n");
 
                 mSongList.push_back(info);
@@ -70,12 +70,11 @@ void SongMenu::fetchSongs() {
 
 // UITableViewDataSource Implementation
 
-uint32_t SongMenu::numberOfItems() const {
-    printf("list: %d\n", mSongList.size());
+inline uint32_t SongMenu::numberOfItems() const {
     return mSongList.size();
 }
 
-void SongMenu::cellForIndex(UITableViewCell &cell, uint32_t index) {
+inline void SongMenu::cellForIndex(UITableViewCell &cell, uint32_t index) {
     SongInfo info = mSongList[index];
-    cell.setText(info.fmtName, strlen(info.fmtName));
+    cell.setText(info.name, strlen(info.name));
 }

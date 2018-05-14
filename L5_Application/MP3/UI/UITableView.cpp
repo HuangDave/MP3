@@ -37,7 +37,7 @@ UITableView::~UITableView() {
 
 void UITableView::updateTableIfNeeded() {
 
-    if (mpCells == NULL && mRows > 0) {
+    if (mpCells == NULL && mRows > 0 || mItemCount != (*mpDataSource).numberOfItems()) {
 
         mItemCount = (*mpDataSource).numberOfItems();
 
@@ -69,15 +69,11 @@ void UITableView::reDraw() {
 }
 
 void UITableView::reDraw(uint8_t row)                                    { cellForRow(row).reDraw(); }
-
 void UITableView::setDataSource(UITableViewDataSource* const dataSource) { mpDataSource = dataSource; }
 void UITableView::setDelegate(UITableViewDelegate* const delegate)       { mpDelegate = delegate; }
-
 void UITableView::setNumberOfRows(uint8_t rows)                          { mRows = rows; }
 void UITableView::setRowHeight(uint8_t height)                           { mRowHeight = height; }
-
 void UITableView::selectCurrentRow()                                     { (*mpDelegate).didSelectCellAt(cellForRow(mCursorPos), mIndexStart + mCursorPos); }
-
 UITableViewCell& UITableView::cellForRow(uint8_t row)                    { return mpCells[row]; }
 
 void UITableView::highlightCellAt(uint8_t row) {

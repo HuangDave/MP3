@@ -80,7 +80,7 @@ void NowPlayingView::reDraw() {
 // UITableViewDelegate Implementation
 
 // TODO: move to UserInterface
-void NowPlayingView::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
+inline void NowPlayingView::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
     printf("now playing: %s", cell.getText());
     //SongInfo info = mSongList[index];
 

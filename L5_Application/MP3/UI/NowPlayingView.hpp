@@ -16,7 +16,9 @@ protected:
 
     char *mpSongName;
 
-    virtual void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
+    // UITableViewDelegate
+    
+    virtual inline void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
 
 public:
     NowPlayingView(Frame frame);
