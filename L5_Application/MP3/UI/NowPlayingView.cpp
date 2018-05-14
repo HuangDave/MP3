@@ -53,6 +53,11 @@ NowPlayingView::~NowPlayingView() {
     mpSongName = NULL;
 }
 
+void NowPlayingView::setSongName(char* const name) {
+    mpSongName = name;
+    reDraw();
+}
+
 void NowPlayingView::reDraw() {
     UIView::reDraw();
 
@@ -75,18 +80,4 @@ void NowPlayingView::reDraw() {
 
         LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
     }
-}
-
-// UITableViewDelegate Implementation
-
-// TODO: move to UserInterface
-inline void NowPlayingView::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
-    printf("now playing: %s", cell.getText());
-    //SongInfo info = mSongList[index];
-
-    // TODO: queue songname for playback
-    //MusicPlayer::play(info.fullName);
-
-    mpSongName = cell.getText();
-    reDraw();
 }

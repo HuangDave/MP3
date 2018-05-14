@@ -32,6 +32,7 @@ bool UserInterface::init() {
     const uint8_t kMenuHeight = 100;
 
     mpSongMenu = new SongMenu(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
+    (*mpSongMenu).setDelegate((UITableViewDelegate *)this);
     addSubview(mpSongMenu);
 
     // Initialize Now Player view
@@ -39,7 +40,6 @@ bool UserInterface::init() {
 
     mpNowPlaying = new NowPlayingView(Frame {0, kMenuHeight, SCREEN_WIDTH, kNowPlayingHeight});
     (*mpNowPlaying).setBackgroundColor(BLUE_COLOR);
-    (*mpSongMenu).setDelegate((UITableViewDelegate *)mpNowPlaying);
     addSubview(mpNowPlaying);
 
     return true;
@@ -48,8 +48,6 @@ bool UserInterface::init() {
 bool UserInterface::run(void *) {
 
     updateViews();
-
-
 
     // TODO: change to external interrupts
 
@@ -71,4 +69,19 @@ void UserInterface::updateViews() {
     for (UIView *view : mpSubviews) {
         view->reDraw();
     }
+}
+
+// UITableViewDelegate Implementation
+
+// TODO: move to UserInterface
+inline void UserInterface::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
+
+    SongInfo *song = (*mpSongMenu).songAt(index);
+
+    // update NowPlayingView to display current song...
+    (*mpNowPlaying).setSongName(song->name);
+
+    // queue song for playback
+    MusicPlayer &player = MusicPlayer::sharedInstance();
+    player.queue(song);
 }

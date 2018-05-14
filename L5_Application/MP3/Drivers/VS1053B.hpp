@@ -125,6 +125,7 @@ public:
 
     /**
      * Buffer song data to decoder.
+     *
      * @param songData Song data to buffer.
      * @param len      Length of buffer (ideally 32).
      */
@@ -196,6 +197,7 @@ protected:
 
     /**
      * Read a data through SCI port.
+     *
      * @param  addr Address to read.
      * @return      Returns the 16-bit register data.
      */
@@ -203,6 +205,7 @@ protected:
 
     /**
      * Write 2 bytes of data to a SCI Regsiter.
+     *
      * @param addr SCI Register address.
      * @param data Data to write to SCI register.
      */
@@ -210,6 +213,7 @@ protected:
 
     /**
      * Write n-bytes of data to a SCI Regsiter.
+     *
      * @param addr SCI Register address.
      * @param data Pointer array.
      * @param len  Length of array.
@@ -220,6 +224,7 @@ protected:
 
     /**
      * Send a byte of data using the SDI port for decoding.
+     *
      * @param data Byte of song data to send.
      */
     inline void writeSDI(uint8_t data);
@@ -229,6 +234,7 @@ protected:
 
     /**
      * Read a SCI register.
+     *
      * @param  addr SCI Register Address.
      * @return      Returns the 16-bit register data.
      */
@@ -236,6 +242,7 @@ protected:
 
     /**
      * Write to a SCI Register.
+     *
      * @param addr SCI Register Address to write to.
      * @param reg  Register data.
      */

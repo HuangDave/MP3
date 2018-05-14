@@ -17,8 +17,11 @@
 #include "scheduler_task.hpp"
 
 typedef struct {
+    /// Full file path to song.
     char *path;
+    /// Formated file name w/o dir prefix and extension type.
     char *name;
+    /// total size of file in bytes.
     uint32_t fileSize;
 } SongInfo;
 
@@ -31,6 +34,14 @@ private:
 
 protected:
 
+    typedef enum {
+        STOPPED = 0,
+        PLAYING,
+        PAUSED
+    } PlayerState;
+
+    static MusicPlayer *instance;
+
     static std::vector<SongInfo> mSongList;
     static uint32_t mSongCount;
 
@@ -39,35 +50,45 @@ protected:
     QueueHandle_t mStreamQueue;
     QueueHandle_t mSongQueue;
 
+    /// Semaphore to puase or resume playback.
+    SemaphoreHandle_t mPlaySema;
+
     char *mpCurrentSongName;
 
     /// Volume percentage, ranges from 0 to 100.
     uint8_t mVolume;
 
+    MusicPlayer();
+
     /**
      * Set the volume of the decoder.
+     *
      * @param percentage Ranges from 0 to 100%.
      */
     inline void setVolume(uint8_t percentage);
 
 public:
 
-    MusicPlayer();
+    static MusicPlayer& sharedInstance();
+
     virtual ~MusicPlayer();
 
-    QueueHandle_t getSharedQueue() const { return mStreamQueue; }
-
-    void play(SongInfo *song);
     void queue(SongInfo *song);
     void pause();
+    void resume();
+
+    void playNext();
+    void playPrevious();
 
     /// Increment the music player volume by 5%.
     void incrementVolume();
     /// Decrement the music player volume by 5%.
     void decrementVolume();
-
 };
 
+/**
+ * Task to read and buffer data of a song from the SD Card and then queue the data to be ready for decoding.
+ */
 class MusicPlayer::BufferMusicTask final: public scheduler_task {
 
 protected:
@@ -81,6 +102,9 @@ public:
     bool run(void *);
 };
 
+/**
+ * Task to dequeue buffered data from BufferMusicTask for decoding.
+ */
 class MusicPlayer::StreamMusicTask final: public scheduler_task {
 
 protected:

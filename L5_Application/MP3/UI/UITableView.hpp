@@ -22,6 +22,7 @@ public:
 
     /**
      * Used to populate the table view.
+     *
      * @param cell  Cell to edit.
      * @param index Index of the item that is displayed by the cell.
      */
@@ -33,6 +34,7 @@ public:
 
     /**
      * Called when a cell in the table view becomes selected.
+     *
      * @param cell  Dereferenced UITableViewCell that was selected.
      * @param index Index of the cell that was selected.
      */
@@ -63,12 +65,14 @@ public:
 
     /**
      * Set number of reusable rows to display.
+     *
      * @param rows Number of rows.
      */
     void setNumberOfRows(uint8_t rows);
 
     /**
      * Set the minimum row height of each row.
+     * 
      * @param height Row height.
      */
     void setRowHeight(uint8_t height);

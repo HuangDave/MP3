@@ -19,7 +19,6 @@ SongMenu::SongMenu(Frame frame) : UITableView(frame) {
     const uint8_t kNumRows = 10;
 
     setDataSource((UITableViewDataSource *)this);
-    //setDelegate((UITableViewDelegate *)this);
     setRowHeight(kMenuRowHeight);
     setNumberOfRows(kNumRows);
 
@@ -31,41 +30,53 @@ SongMenu::~SongMenu() { }
 void SongMenu::fetchSongs() {
     mSongList.empty();
 
+    const char dirPath[] = "1:";
     DIR directory;
 
-    if (f_opendir(&directory, "1:") == FR_OK) {     // read SD Card directory
+    if (f_opendir(&directory, dirPath) == FR_OK) {     // read SD Card directory
         static FILINFO fileInfo;
 
         while (f_readdir(&directory, &fileInfo) == FR_OK) {
             if (fileInfo.fname[0] == 0) break;
 
             const char *mp3[] = { ".mp3", ".MP3" };
-            char *ext= strrchr(fileInfo.fname,'.');
+            const char *ext   = strrchr(fileInfo.fname,'.');
 
             // only retreive names of mp3 files
             if (!(fileInfo.fattrib & AM_DIR) && (strcmp(ext, mp3[0]) || strcmp(ext, mp3[1]))) {
-                SongInfo info;
+                SongInfo song;
 
                 // TODO: get full filename
-                // TODO: save a copy of filename without the .mp3 or .MP3 extension
 
-                uint8_t len = strlen(fileInfo.fname);
-                info.name = new char[len];
-                strcpy(info.name, fileInfo.fname);
+                const char *fullName = fileInfo.lfsize == 0 ? fileInfo.fname : fileInfo.lfname;
 
-                len = fileInfo.lfsize;
-                printf("lfsize: %d\n", len);
-                info.path = new char[len];
-                strcpy(info.path, fileInfo.lfname);
+                printf("lfsize: %d\n", fileInfo.lfsize);
 
-                for (uint8_t i = 0; i < len - 1; i++)
-                    printf("%c", info.path[i]);
-                printf("\n");
+                // construct and save full file path by combining directory path and full file name...
+                uint32_t len = strlen(dirPath) + strlen(fullName) + 1;
+                char *path = new char[len];
+                strcpy(path, dirPath);
+                strcat(path, fullName);
+                path[len-1] = '\0'; // set terminal char at the end of string
+                song.path = path;
 
-                mSongList.push_back(info);
+                // parse and save song name without extension...
+                len = strlen(fullName) - strlen(ext) + 1;
+                char *name = new char[len];
+                strncpy(name, fullName, len);
+                name[len-1] = '\0'; // set terminal char at the end of string
+                song.name = name;
+
+                // TODO: get file size
+
+                mSongList.push_back(song);
             }
         }
     }
+}
+
+SongInfo* SongMenu::songAt(uint32_t index) {
+    return &(mSongList[index]);
 }
 
 // UITableViewDataSource Implementation
@@ -75,6 +86,6 @@ inline uint32_t SongMenu::numberOfItems() const {
 }
 
 inline void SongMenu::cellForIndex(UITableViewCell &cell, uint32_t index) {
-    SongInfo info = mSongList[index];
+    SongInfo info = mSongList.at(index);
     cell.setText(info.name, strlen(info.name));
 }

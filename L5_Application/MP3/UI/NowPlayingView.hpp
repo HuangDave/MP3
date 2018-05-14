@@ -8,24 +8,22 @@
 #ifndef NOWPLAYINGVIEW_HPP_
 #define NOWPLAYINGVIEW_HPP_
 
-#include <MP3/UI/UITableView.hpp>
+#include <MP3/UI/UIView.hpp>
 
-class NowPlayingView: public UIView, protected virtual UITableViewDelegate {
+class NowPlayingView: public UIView {
 
 protected:
 
     char *mpSongName;
 
-    // UITableViewDelegate
-    
-    virtual inline void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
-
 public:
+
     NowPlayingView(Frame frame);
     virtual ~NowPlayingView();
 
-    virtual void reDraw() override;
+    void setSongName(char* const name);
 
+    virtual void reDraw() override;
 };
 
 #endif /* NOWPLAYINGVIEW_HPP_ */

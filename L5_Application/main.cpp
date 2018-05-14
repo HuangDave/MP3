@@ -25,9 +25,10 @@
 #include "MP3/MusicPlayer.hpp"
 
 int main(void) {
-    
+
+    MusicPlayer::sharedInstance();
+
     UserInterface *ui = new UserInterface(PRIORITY_HIGH);
-    MusicPlayer *player = new MusicPlayer();
 
     scheduler_add_task(new terminalTask(PRIORITY_HIGH));
     scheduler_add_task(ui);

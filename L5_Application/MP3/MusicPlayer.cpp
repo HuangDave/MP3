@@ -22,9 +22,18 @@
 
 #define SONG_QUEUE_SIZE          (2)
 
+MusicPlayer* MusicPlayer::instance = NULL;
+
+MusicPlayer& MusicPlayer::sharedInstance() {
+    if (instance == NULL) instance = new MusicPlayer();
+    return *instance;
+}
+
 MusicPlayer::MusicPlayer() {
     mStreamQueue = xQueueCreate(STREAM_QUEUE_SIZE, sizeof(uint8_t) * STREAM_QUEUE_BUFFER_SIZE);
     mSongQueue   = xQueueCreate(SONG_QUEUE_SIZE,   sizeof(SongInfo));
+
+    mPlaySema    = xSemaphoreCreateBinary();
 
     mpCurrentSongName = NULL;
 
@@ -38,59 +47,14 @@ MusicPlayer::MusicPlayer() {
 
 MusicPlayer::~MusicPlayer() { }
 
-void MusicPlayer::play(SongInfo *song) {
-    mDecoder.enablePlayback();
-
-    mpCurrentSongName = song->name;
-
-    const char dirPrefix[] = "1:";
-    char *fileName = (char *)malloc(strlen(dirPrefix) + strlen(mpCurrentSongName) - 1);
-    strcpy(fileName, dirPrefix);
-    strcat(fileName, mpCurrentSongName);
-
-    FILE *f = fopen(fileName, "r"); // read current song in SD Card
-
-    // get file size
-    fseek(f, 0, SEEK_END);
-    const uint32_t fileSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    (*song).fileSize = fileSize;
-
-    fclose(f);
-
-/*
-    // queue 512 bytes for decoder
-    for (uint32_t i = 0; i < fileSize / 512; i++) {
-        //if (mState & (VS1053B::STOPPED | VS1053B::CANCELLING)) break;
-
-        uint8_t *data = new uint8_t[512];
-        fread(data, 1, 512, f);
-        xQueueSend(mStreamQueue, &data, portMAX_DELAY);
-    }
-
-    fclose(f); */
-}
-
 void MusicPlayer::queue(SongInfo *song) {
     mDecoder.enablePlayback();
 
-    const char *songName = song->path;
-
-    const char dirPrefix[] = "1:";
-    char *fileName = (char *)malloc(strlen(dirPrefix) + strlen(songName) + 1);
-    strcpy(fileName, dirPrefix);
-    strcat(fileName, songName);
-
-    FILE *f = fopen(fileName, "r"); // read current song in SD Card
-
     // get file size
+    FILE *f = fopen(song->path, "r"); // read current song in SD Card
     fseek(f, 0, SEEK_END);
-    const uint32_t fileSize = ftell(f);
+    song->fileSize = ftell(f);
     fseek(f, 0, SEEK_SET);
-
-    (*song).fileSize = fileSize;
-
     fclose(f);
 
     xQueueSend(mSongQueue, song, portMAX_DELAY);
@@ -99,6 +63,11 @@ void MusicPlayer::queue(SongInfo *song) {
 void MusicPlayer::pause() {
     // TODO: empty queue
     mDecoder.disablePlayback();
+}
+
+void MusicPlayer::resume() {
+    mDecoder.enablePlayback();
+    xSemaphoreGive(mPlaySema);
 }
 
 void MusicPlayer::incrementVolume() {
@@ -119,30 +88,43 @@ inline void MusicPlayer::setVolume(uint8_t percentage) {
 }
 
 bool MusicPlayer::BufferMusicTask::run(void *) {
-    const uint32_t fileSize = 1024 * 1000 * 11.074;
-    const uint32_t size = STREAM_QUEUE_BUFFER_SIZE;
+    // TODO: should stream selected song
+
+    /*
+    const uint32_t bufferSize = STREAM_QUEUE_BUFFER_SIZE;
 
     while (1) {
-
-        /* TODO: should stream selected song
-
         SongInfo *song = NULL;
         if (xQueueReceive(mSongQueue, song, portMAX_DELAY)) {
             mpCurrentSong = song;
 
-            const fileSize = song->fileSize;
+            const uint32_t fileSize = song->fileSize;
+            const uint32_t bufferSize = STREAM_QUEUE_BUFFER_SIZE;
 
-            for (uint32_t i = 0; i < fileSize/size; i++) {
-                uint8_t data[size] = { 0 };
+            for (uint32_t i = 0; i < fileSize/bufferSize; i++) {
+                uint8_t data[bufferSize] = { 0 };
+
+                switch (mDecoder.getState()) {
+                    case PAUSED: xSemaphoreTake(mPlaySema, portMAX_DELAY); break;
+                    default: break;
+                }
+
                 if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
-                    Storage::read("1:rain_320.mp3", data, size, i * size);
+                    Storage::read("1:rain_320.mp3", data, bufferSize, i * bufferSize);
 
                     xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
                     xQueueSend(mStreamQueue, data, portMAX_DELAY);
                 }
                 vTaskDelay(15);
             }
-        } */
+        }
+    }
+*/
+
+    const uint32_t fileSize = 1024 * 1000 * 11.074;
+    const uint32_t size = STREAM_QUEUE_BUFFER_SIZE;
+
+    while (1) {
 
         for (uint32_t i = 0; i < fileSize/size; i++) {
             uint8_t data[size] = { 0 };

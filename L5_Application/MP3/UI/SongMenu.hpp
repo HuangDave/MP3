@@ -33,6 +33,8 @@ public:
 
     SongMenu(Frame frame);
     virtual ~SongMenu();
+
+    SongInfo* songAt(uint32_t index);
 };
 
 #endif /* SONGMENU_HPP_ */
