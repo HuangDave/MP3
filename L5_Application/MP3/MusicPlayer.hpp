@@ -47,6 +47,8 @@ protected:
 
     VS1053B &mDecoder = VS1053B::sharedInstance();
 
+    BufferMusicTask *bufferTask;
+
     QueueHandle_t mStreamQueue;
     QueueHandle_t mSongQueue;
 
@@ -54,6 +56,8 @@ protected:
     SemaphoreHandle_t mPlaySema;
 
     char *mpCurrentSongName;
+
+    bool newSong;
 
     /// Volume percentage, ranges from 0 to 100.
     uint8_t mVolume;
@@ -93,11 +97,14 @@ class MusicPlayer::BufferMusicTask final: public scheduler_task {
 
 protected:
     VS1053B &mDecoder = VS1053B::sharedInstance();
-    //SongInfo *mpCurrentSong;
     QueueHandle_t mSongQueue;
     QueueHandle_t mStreamQueue;
 
 public:
+
+
+    bool newSongSelected;
+
     BufferMusicTask(uint8_t priority, QueueHandle_t songQueue, QueueHandle_t streamQueue) : scheduler_task("buffer_song", 1024 * 3, priority), mSongQueue(songQueue), mStreamQueue(streamQueue) { };
     bool run(void *);
 };

@@ -10,19 +10,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "string.h"
-#include <iostream>
 #include "ff.h"
-
-// TODO: remove
 #include "storage.hpp"
 #include "io.hpp"
 
-#include "printf_lib.h"
-
 #define STREAM_QUEUE_SIZE        (3)
 #define STREAM_QUEUE_BUFFER_SIZE (1024)
-
-#define DECODER_BUFFER_SIZE      (32)
 
 #define SONG_QUEUE_SIZE          (2)
 
@@ -45,7 +38,9 @@ MusicPlayer::MusicPlayer() {
     mVolume = 90;
     setVolume(mVolume);
 
-    scheduler_add_task(new BufferMusicTask(PRIORITY_LOW, mSongQueue, mStreamQueue));
+    bufferTask = new BufferMusicTask(PRIORITY_LOW, mSongQueue, mStreamQueue);
+
+    scheduler_add_task(bufferTask);
     scheduler_add_task(new StreamMusicTask(PRIORITY_LOW, mStreamQueue));
 }
 
@@ -54,22 +49,10 @@ MusicPlayer::~MusicPlayer() { }
 void MusicPlayer::queue(SongInfo *song) {
     mDecoder.enablePlayback();
 
-
     if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
-
-        const char *path = song->path;
-
-        // get file size
-        FILE *f = fopen(path, "r"); // read current song in SD Card
-        fseek(f, 0, SEEK_END);
-        const long fileSize = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        fclose(f);
-
-        song->fileSize = fileSize;
-
+        bufferTask->newSongSelected = true;
         xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
-        xQueueSend(mSongQueue, song, portMAX_DELAY);
+        xQueueSend(mSongQueue, &song, portMAX_DELAY);
     }
 }
 
@@ -103,28 +86,29 @@ inline void MusicPlayer::setVolume(uint8_t percentage) {
 bool MusicPlayer::BufferMusicTask::run(void *) {
     // TODO: should stream selected song
 
-    /*
     const uint32_t bufferSize = STREAM_QUEUE_BUFFER_SIZE;
 
     while (1) {
         SongInfo *song = NULL;
-        if (xQueueReceive(mSongQueue, song, portMAX_DELAY)) {
-            mpCurrentSong = song;
+        if (xQueueReceive(mSongQueue, &song, portMAX_DELAY)) {
 
             const uint32_t fileSize = song->fileSize;
-            const uint32_t bufferSize = STREAM_QUEUE_BUFFER_SIZE;
+            const char *path = song->path;
+
+            newSongSelected = false;
 
             for (uint32_t i = 0; i < fileSize/bufferSize; i++) {
                 uint8_t data[bufferSize] = { 0 };
 
-                switch (mDecoder.getState()) {
-                    case PAUSED: xSemaphoreTake(mPlaySema, portMAX_DELAY); break;
-                    default: break;
-                }
+                //switch (mDecoder.getState()) {
+                //    case PAUSED: xSemaphoreTake(mPlaySema, portMAX_DELAY); break;
+                //    default: break;
+                //}
+
+                if (newSongSelected) break;
 
                 if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
-                    Storage::read("1:rain_320.mp3", data, bufferSize, i * bufferSize);
-
+                    Storage::read(path, data, bufferSize, i * bufferSize);
                     xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
                     xQueueSend(mStreamQueue, data, portMAX_DELAY);
                 }
@@ -132,31 +116,13 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
             }
         }
     }
-*/
-
-    const uint32_t fileSize = 1024 * 1000 * 11.074;
-    const uint32_t size = STREAM_QUEUE_BUFFER_SIZE;
-    mDecoder.enablePlayback();
-    while (1) {
-        for (uint32_t i = 0; i < fileSize/size; i++) {
-            uint8_t data[size] = { 0 };
-            if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
-
-                Storage::read("1:light_years.mp3", data, size, i * size);
-
-                xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
-                xQueueSend(mStreamQueue, data, portMAX_DELAY);
-            }
-            vTaskDelay(15);
-        }
-    }
 
     return true;
 }
 
 bool MusicPlayer::StreamMusicTask::run(void *) {
-    const uint32_t size = STREAM_QUEUE_BUFFER_SIZE;
-    const uint32_t buffSize = DECODER_BUFFER_SIZE;
+    const uint32_t size     = STREAM_QUEUE_BUFFER_SIZE;
+    const uint32_t buffSize = VS1053B_BUFFER_SIZE;
 
     while (1) {
         uint8_t data[size] = { 0 };
