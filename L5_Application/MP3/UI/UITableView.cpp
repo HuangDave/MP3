@@ -166,7 +166,7 @@ void UITableViewCell::reDraw() {
 
     uint8_t unselIcon[] = { 0, 0, 0, 0 };
 
-    Frame selFrame = Frame { mFrame.x + 2, mFrame.y + 1, 4, 8 };
+    Frame selFrame = Frame { mFrame.x + 2, mFrame.y, 4, 8 };
 
     uint8_t len = mTextLen > 15 ? 18 : mTextLen;
 
@@ -175,9 +175,9 @@ void UITableViewCell::reDraw() {
     for (uint8_t i = 15; i < 18; i++)
         str[i] = '.';
 
-    if   (mHighlighted) LCDDisplay.drawBitmap(selFrame, selIcon, BLACK_COLOR, mBackgroundColor);
+    if   (mHighlighted) LCDDisplay.drawBitmap(selFrame, selIcon,   BLACK_COLOR, mBackgroundColor);
     else                LCDDisplay.drawBitmap(selFrame, unselIcon, BLACK_COLOR, mBackgroundColor);
-    
+
     // TODO: move to UILabel Class
     for (uint8_t i = 0; i < len; i++) {
         const uint8_t padding = mFrame.x + 8;
@@ -189,13 +189,11 @@ void UITableViewCell::reDraw() {
 
         const uint8_t *bitmap = Font[int(str[i])];
 
-        //if (mHighlighted)
-
         //if   (mHighlighted) LCDDisplay.drawFont(Point2D{x, y}, bitmap, WHITE_COLOR, mHighlightedColor);
         //else                LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
 
         LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
 
-        delay_ms(2);
+        //delay_ms(2);
     }
 }

@@ -13,11 +13,31 @@
 // TODO: should use external interrupts
 #include "io.hpp"
 
+#include <L1/LabGPIO.hpp>
 #include <MP3/Drivers/ST7735.hpp>
 #include <MP3/MusicPlayer.hpp>
 #include <MP3/UI/SongMenu.hpp>
 #include <MP3/UI/NowPlayingView.hpp>
 
+/*
+typedef enum {
+    PLAY      = 0,           // play/puase
+    MENU_SEL,
+    MENU_UP,
+    MENU_DOWN,
+    BACK,
+} UI_BUTTON_CONFIG;
+
+LabGPIO *buttons[] = {
+    new LabGPIO( , , true, true),
+    new LabGPIO( , , true, true),
+    new LabGPIO( , , true, true),
+    new LabGPIO( , , true, true),
+    new LabGPIO( , , true, true),
+    new LabGPIO( , , true, true),
+    new LabGPIO( , , true, true),
+};
+*/
 UserInterface::~UserInterface() {
     delete mpSongMenu;   mpSongMenu   = NULL;
     delete mpNowPlaying; mpNowPlaying = NULL;
@@ -55,9 +75,8 @@ bool UserInterface::run(void *) {
         if      (SW.getSwitch(1)) { mpSongMenu->moveCursor(UITableView::DIRECTION_UP);   }
         else if (SW.getSwitch(2)) { mpSongMenu->moveCursor(UITableView::DIRECTION_DOWN); }
         else if (SW.getSwitch(3)) { mpSongMenu->selectCurrentRow(); vTaskDelay(1000);    }
-        vTaskDelay(15);
+        vTaskDelay(50);
     }
-
     return true;
 }
 
@@ -84,4 +103,5 @@ inline void UserInterface::didSelectCellAt(UITableViewCell &cell, uint32_t index
     // queue song for playback
     MusicPlayer &player = MusicPlayer::sharedInstance();
     player.queue(song);
+    player.queue((*mpSongMenu).songAt(index+1));
 }
