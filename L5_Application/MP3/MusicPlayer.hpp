@@ -93,7 +93,7 @@ class MusicPlayer::BufferMusicTask final: public scheduler_task {
 
 protected:
     VS1053B &mDecoder = VS1053B::sharedInstance();
-    SongInfo *mpCurrentSong;
+    //SongInfo *mpCurrentSong;
     QueueHandle_t mSongQueue;
     QueueHandle_t mStreamQueue;
 

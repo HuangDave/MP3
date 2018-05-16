@@ -103,47 +103,47 @@ void ST7735::toggleDisplay(bool on) {
     deselectDC();
 }
 
-void ST7735::selectDC() {
+inline void ST7735::selectDC() {
     if (xSemaphoreTake(spiMutex[mPeripheral], portMAX_DELAY)) {
         mpDC->setLow();
         mpCS->setLow();
     }
 }
 
-void ST7735::deselectDC() {
+inline void ST7735::deselectDC() {
     mpCS->setHigh();
     mpDC->setHigh();
     xSemaphoreGive(spiMutex[mPeripheral]);
 }
 
-uint8_t ST7735::write(uint8_t data) {
+inline uint8_t ST7735::write(uint8_t data) {
     uint8_t byte = 0x00;
     selectCS();
     {
-        SSPn->CPSR = 4;                                 // configure 12MHz pclk
+        SSPn->CPSR = 2;                                 // configure 12MHz pclk
         byte = transfer(data);
     }
     deselectCS();
     return byte;
 }
 
-uint16_t ST7735::writeWord(uint16_t data) {
+inline uint16_t ST7735::writeWord(uint16_t data) {
     uint16_t word = 0x0000;
     word = (write(data >> 8) << 8) & 0xFF00;
     word = write(data & 0xFF) & 0xFF;
     return word;
 }
 
-void ST7735::writeCommand(uint8_t cmd) {
+inline void ST7735::writeCommand(uint8_t cmd) {
     selectDC();                                     // set D/C low to enable data command transmission
     {
-        SSPn->CPSR = 4;                                 // configure 12MHz pclk
+        SSPn->CPSR = 2;                                 // configure 12MHz pclk
         transfer(cmd);
     }
     deselectDC();
 }
 
-void ST7735::writeColor(Color color, uint32_t repeat) {
+inline void ST7735::writeColor(Color color, uint32_t repeat) {
     while (repeat > 0) {
         write(color.r);
         write(color.g);
@@ -152,7 +152,7 @@ void ST7735::writeColor(Color color, uint32_t repeat) {
     }
 }
 
-void ST7735::setAddrWindow(Frame frame) {
+inline void ST7735::setAddrWindow(Frame frame) {
     // Using orientation: X-Y exchange
     // swap x with y and width with height when setting address windrow
     writeCommand(ST7735_CASET);                     // write x-component of address window

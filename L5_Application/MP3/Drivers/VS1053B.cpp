@@ -104,7 +104,7 @@ void VS1053B::writeSCI(uint8_t addr, uint16_t data) {
 }
 
 void VS1053B::writeSCI(uint8_t addr, uint16_t *data, uint32_t len) {
-    while(!isReady());
+    while(!isReady()) delay_ms(0.1);
     selectCS();
     {
         SSPn->CPSR = 16;                                        // SCK needs to match CLKI / 7 for SCI rw

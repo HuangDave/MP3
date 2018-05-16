@@ -18,7 +18,7 @@ SongMenu::SongMenu(Frame frame) : UITableView(frame) {
     const uint8_t kMenuRowHeight = 10;
     const uint8_t kNumRows = 10;
 
-    setDataSource((UITableViewDataSource *)this);
+    setDataSource((UITableViewDataSource *) this);
     setRowHeight(kMenuRowHeight);
     setNumberOfRows(kNumRows);
 
@@ -33,8 +33,13 @@ void SongMenu::fetchSongs() {
     const char dirPath[] = "1:";
     DIR directory;
 
+    //char lfnBuffer[_MAX_LFN];
+
     if (f_opendir(&directory, dirPath) == FR_OK) {     // read SD Card directory
         static FILINFO fileInfo;
+
+        //fileInfo.lfname = lfnBuffer;
+        //fileInfo.lfsize = _MAX_LFN - 1;
 
         while (f_readdir(&directory, &fileInfo) == FR_OK) {
             if (fileInfo.fname[0] == 0) break;
@@ -50,6 +55,7 @@ void SongMenu::fetchSongs() {
 
                 const char *fullName = fileInfo.lfsize == 0 ? fileInfo.fname : fileInfo.lfname;
 
+                printf("lfn[0]: %c\n", fileInfo.lfname[0]);
                 printf("lfsize: %d\n", fileInfo.lfsize);
 
                 // construct and save full file path by combining directory path and full file name...
@@ -72,6 +78,8 @@ void SongMenu::fetchSongs() {
                 mSongList.push_back(song);
             }
         }
+
+        f_closedir(&directory);
     }
 }
 

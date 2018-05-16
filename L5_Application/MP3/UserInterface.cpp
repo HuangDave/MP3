@@ -55,7 +55,7 @@ bool UserInterface::run(void *) {
         if      (SW.getSwitch(1)) { mpSongMenu->moveCursor(UITableView::DIRECTION_UP);   }
         else if (SW.getSwitch(2)) { mpSongMenu->moveCursor(UITableView::DIRECTION_DOWN); }
         else if (SW.getSwitch(3)) { mpSongMenu->selectCurrentRow(); vTaskDelay(1000);    }
-        vTaskDelay(5);
+        vTaskDelay(15);
     }
 
     return true;

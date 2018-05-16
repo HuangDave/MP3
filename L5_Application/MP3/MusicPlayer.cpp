@@ -17,8 +17,12 @@
 #include "storage.hpp"
 #include "io.hpp"
 
+#include "printf_lib.h"
+
 #define STREAM_QUEUE_SIZE        (3)
 #define STREAM_QUEUE_BUFFER_SIZE (1024)
+
+#define DECODER_BUFFER_SIZE      (32)
 
 #define SONG_QUEUE_SIZE          (2)
 
@@ -38,7 +42,7 @@ MusicPlayer::MusicPlayer() {
     mpCurrentSongName = NULL;
 
     // set default volume to 50 on startup
-    mVolume = 50;
+    mVolume = 90;
     setVolume(mVolume);
 
     scheduler_add_task(new BufferMusicTask(PRIORITY_LOW, mSongQueue, mStreamQueue));
@@ -50,14 +54,23 @@ MusicPlayer::~MusicPlayer() { }
 void MusicPlayer::queue(SongInfo *song) {
     mDecoder.enablePlayback();
 
-    // get file size
-    FILE *f = fopen(song->path, "r"); // read current song in SD Card
-    fseek(f, 0, SEEK_END);
-    song->fileSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    fclose(f);
 
-    xQueueSend(mSongQueue, song, portMAX_DELAY);
+    if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
+
+        const char *path = song->path;
+
+        // get file size
+        FILE *f = fopen(path, "r"); // read current song in SD Card
+        fseek(f, 0, SEEK_END);
+        const long fileSize = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        fclose(f);
+
+        song->fileSize = fileSize;
+
+        xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
+        xQueueSend(mSongQueue, song, portMAX_DELAY);
+    }
 }
 
 void MusicPlayer::pause() {
@@ -82,7 +95,7 @@ void MusicPlayer::decrementVolume() {
 
 inline void MusicPlayer::setVolume(uint8_t percentage) {
     // clamp percentage to 0 or 100
-    if (mVolume < 0)        mVolume = 0;
+    if      (mVolume < 0)   mVolume = 0;
     else if (mVolume > 100) mVolume = 100;
     mDecoder.setVolume( (mVolume/100.0) * VS1053B_MAX_VOL );
 }
@@ -123,14 +136,13 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
 
     const uint32_t fileSize = 1024 * 1000 * 11.074;
     const uint32_t size = STREAM_QUEUE_BUFFER_SIZE;
-
+    mDecoder.enablePlayback();
     while (1) {
-
         for (uint32_t i = 0; i < fileSize/size; i++) {
             uint8_t data[size] = { 0 };
             if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
 
-                Storage::read("1:rain_320.mp3", data, size, i * size);
+                Storage::read("1:light_years.mp3", data, size, i * size);
 
                 xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
                 xQueueSend(mStreamQueue, data, portMAX_DELAY);
@@ -144,16 +156,17 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
 
 bool MusicPlayer::StreamMusicTask::run(void *) {
     const uint32_t size = STREAM_QUEUE_BUFFER_SIZE;
+    const uint32_t buffSize = DECODER_BUFFER_SIZE;
 
     while (1) {
         uint8_t data[size] = { 0 };
         if (xQueueReceive(mStreamQueue, data, portMAX_DELAY)) {
 
-            for (uint32_t j = 0; j < size/32; j++){
+            for (uint32_t j = 0; j < size/buffSize; j++){
 
-                while (mDecoder.getState() == VS1053B::PAUSED) vTaskDelay(1);
+                //while (mDecoder.getState() == VS1053B::PAUSED) vTaskDelay(1);
 
-                MP3.buffer(data + (j*32), 32);
+                MP3.buffer(data + (j*buffSize), buffSize);
             }
             vTaskDelay(15);
         }

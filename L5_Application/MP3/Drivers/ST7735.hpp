@@ -33,16 +33,16 @@ protected:
     ST7735();
 
     // Toggle D/C low to interpret transmission byte as command byte.
-    void selectDC();
+    inline void selectDC();
     // Toggle D/C high to interpret transmission byte as data byte.
-    void deselectDC();
+    inline void deselectDC();
 
     /**
      * Write a byte of data to display.
      * @param  data
      * @return
      */
-    uint8_t write(uint8_t data);
+    inline uint8_t write(uint8_t data);
 
     /**
      * Write a word to display.
@@ -50,13 +50,13 @@ protected:
      * @param  data
      * @return
      */
-    uint16_t writeWord(uint16_t data);
+    inline uint16_t writeWord(uint16_t data);
 
     /**
      * Send command opcode to display
      * @param cmd Opcode
      */
-    void writeCommand(uint8_t cmd);
+    inline void writeCommand(uint8_t cmd);
 
 public:
 
@@ -73,9 +73,9 @@ public:
     void toggleSleep(bool on);
     void toggleDisplay(bool on);
 
-    void writeColor(Color color, uint32_t repeat = 1);
+    inline void writeColor(Color color, uint32_t repeat = 1);
 
-    void setAddrWindow(Frame frame);
+    inline void setAddrWindow(Frame frame);
     void fillRect(Frame frame, Color c);
 
     /**
