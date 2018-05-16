@@ -32,31 +32,33 @@ void SongMenu::fetchSongs() {
 
     const char dirPath[] = "1:";
     DIR directory;
+    static FILINFO fileInfo;
 
-    //char lfnBuffer[_MAX_LFN];
+#if _USE_LFN
+    char lfnBuffer[_MAX_LFN];
+    fileInfo.lfsize = _MAX_LFN-1;
+    fileInfo.lfname = lfnBuffer;
+#endif
 
-    if (f_opendir(&directory, dirPath) == FR_OK) {     // read SD Card directory
-        static FILINFO fileInfo;
+    const char *mp3[] = { ".mp3", ".MP3" };
+    const char *ext   = strrchr(fileInfo.fname,'.');
 
-        //fileInfo.lfname = lfnBuffer;
-        //fileInfo.lfsize = _MAX_LFN - 1;
+    FRESULT res = f_opendir(&directory, dirPath);
 
-        while (f_readdir(&directory, &fileInfo) == FR_OK) {
-            if (fileInfo.fname[0] == 0) break;
+    if (res == FR_OK) {
 
-            const char *mp3[] = { ".mp3", ".MP3" };
-            const char *ext   = strrchr(fileInfo.fname,'.');
+        while (1) {
+            fileInfo.lfsize = _MAX_LFN-1;
+            fileInfo.lfname = lfnBuffer;
 
-            // only retreive names of mp3 files
+            res = f_readdir(&directory, &fileInfo);
+
+            if (res != FR_OK || fileInfo.fname[0] == 0) break;
+
             if (!(fileInfo.fattrib & AM_DIR) && (strcmp(ext, mp3[0]) || strcmp(ext, mp3[1]))) {
                 SongInfo song;
 
-                // TODO: get full filename
-
-                const char *fullName = fileInfo.lfsize == 0 ? fileInfo.fname : fileInfo.lfname;
-
-                printf("lfn[0]: %c\n", fileInfo.lfname[0]);
-                printf("lfsize: %d\n", fileInfo.lfsize);
+                const char *fullName = fileInfo.lfname[0] == 0 ? fileInfo.fname : fileInfo.lfname;
 
                 // construct and save full file path by combining directory path and full file name...
                 uint32_t len = strlen(dirPath) + strlen(fullName) + 1;
@@ -67,18 +69,17 @@ void SongMenu::fetchSongs() {
                 song.path = path;
 
                 // parse and save song name without extension...
-                len = strlen(fullName) - strlen(ext) + 1;
+                len = strlen(fullName) - strlen(mp3[0]) + 1;
                 char *name = new char[len];
                 strncpy(name, fullName, len);
                 name[len-1] = '\0'; // set terminal char at the end of string
                 song.name = name;
 
-                // TODO: get file size
+                song.fileSize = fileInfo.fsize;
 
                 mSongList.push_back(song);
             }
         }
-
         f_closedir(&directory);
     }
 }
