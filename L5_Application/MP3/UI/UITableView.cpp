@@ -8,7 +8,7 @@
 #include "UITableView.hpp"
 #include <stdio.h>
 #include <string.h>
-
+#include "utilities.h"
 #include <MP3/Drivers/ST7735.hpp>
 
 // ---------------------------------------------------------- //
@@ -37,7 +37,7 @@ UITableView::~UITableView() {
 
 void UITableView::updateTableIfNeeded() {
 
-    if (mpCells == NULL && mRows > 0) {
+    if (mpCells == NULL && mRows > 0 || mItemCount != (*mpDataSource).numberOfItems()) {
 
         mItemCount = (*mpDataSource).numberOfItems();
 
@@ -69,15 +69,11 @@ void UITableView::reDraw() {
 }
 
 void UITableView::reDraw(uint8_t row)                                    { cellForRow(row).reDraw(); }
-
 void UITableView::setDataSource(UITableViewDataSource* const dataSource) { mpDataSource = dataSource; }
 void UITableView::setDelegate(UITableViewDelegate* const delegate)       { mpDelegate = delegate; }
-
 void UITableView::setNumberOfRows(uint8_t rows)                          { mRows = rows; }
 void UITableView::setRowHeight(uint8_t height)                           { mRowHeight = height; }
-
 void UITableView::selectCurrentRow()                                     { (*mpDelegate).didSelectCellAt(cellForRow(mCursorPos), mIndexStart + mCursorPos); }
-
 UITableViewCell& UITableView::cellForRow(uint8_t row)                    { return mpCells[row]; }
 
 void UITableView::highlightCellAt(uint8_t row) {
@@ -159,7 +155,18 @@ void UITableViewCell::setHighlightedColor(Color color) { mHighlightedColor = col
 
 void UITableViewCell::reDraw() {
     // use highlighted color if cell is highlighted
-    UIView::reDrawWithBackground( mHighlighted ? &mHighlightedColor : &mBackgroundColor );
+    //UIView::reDrawWithBackground( mHighlighted ? &mHighlightedColor : &mBackgroundColor );
+
+    uint8_t selIcon[] = {
+            0b11111110,
+            0b01111100,
+            0b00111000,
+            0b00010000
+    };
+
+    uint8_t unselIcon[] = { 0, 0, 0, 0 };
+
+    Frame selFrame = Frame { mFrame.x + 2, mFrame.y, 4, 8 };
 
     uint8_t len = mTextLen > 15 ? 18 : mTextLen;
 
@@ -168,9 +175,12 @@ void UITableViewCell::reDraw() {
     for (uint8_t i = 15; i < 18; i++)
         str[i] = '.';
 
+    if   (mHighlighted) LCDDisplay.drawBitmap(selFrame, selIcon,   BLACK_COLOR, mBackgroundColor);
+    else                LCDDisplay.drawBitmap(selFrame, unselIcon, BLACK_COLOR, mBackgroundColor);
+
     // TODO: move to UILabel Class
     for (uint8_t i = 0; i < len; i++) {
-        const uint8_t padding = mFrame.x + 4;
+        const uint8_t padding = mFrame.x + 8;
         const uint8_t charSpacing = (i * 1);
         const uint8_t charPos = (i * 5);
 
@@ -179,7 +189,11 @@ void UITableViewCell::reDraw() {
 
         const uint8_t *bitmap = Font[int(str[i])];
 
-        if   (mHighlighted) LCDDisplay.drawFont(Point2D{x, y}, bitmap, WHITE_COLOR, mHighlightedColor);
-        else                LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
+        //if   (mHighlighted) LCDDisplay.drawFont(Point2D{x, y}, bitmap, WHITE_COLOR, mHighlightedColor);
+        //else                LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
+
+        LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
+
+        //delay_ms(2);
     }
 }

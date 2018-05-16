@@ -5,7 +5,7 @@
 
 class LabGPIO {
 
-private:
+protected:
 
     /// reference to the base pointer of the GPIO port mapped in memory
     volatile LPC_GPIO_TypeDef *mpGPIOPin;
@@ -24,6 +24,8 @@ public:
      * @param {uint8_t} pin  - pin number between 0 and 32
      */
     LabGPIO(uint8_t port, uint8_t pin);
+
+    LabGPIO(uint8_t port, uint8_t pin, bool output, bool high);
 
     uint8_t getPortNum() const;
 

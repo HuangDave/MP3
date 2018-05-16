@@ -72,12 +72,12 @@ public:
      * 2) Set peripheral clock
      * 3) Sets pins for specified peripheral to MOSI, MISO, and SCK
      *
-     * @param peripheral    - which peripheral SSP0 or SSP1 you want to select.
-     * @param dataSize      - transfer size data width; To optimize the code, look for a pattern in the datasheet
-     * @param format        -  is the code format for which synchronous serial protocol you want to use.
-     * @param clkdiv        - is the how much to divide the clock for SSP; take care of error cases such as the value of 0, 1, and odd numbers
+     * @param peripheral which peripheral SSP0 or SSP1 you want to select.
+     * @param dataSize   transfer size data width; To optimize the code, look for a pattern in the datasheet
+     * @param format     is the code format for which synchronous serial protocol you want to use.
+     * @param clkdiv     is the how much to divide the clock for SSP; take care of error cases such as the value of 0, 1, and odd numbers
      *
-     * @return true if initialization was successful
+     * @return           Returns true if initialization was successful
      */
     bool init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCLK_Rate rate);
 

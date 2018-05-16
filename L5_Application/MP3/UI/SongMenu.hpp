@@ -10,15 +10,11 @@
 
 #include <MP3/UI/UITableView.hpp>
 #include <vector>
+#include <MP3/MusicPlayer.hpp>
 
 class SongMenu final: public UITableView, protected virtual UITableViewDataSource {
 
 protected:
-
-    typedef struct {
-        char *fmtName;
-        char *fullName;
-    } SongInfo;
 
     /// Vector array of list of song names retreived from SD Card.
     std::vector<SongInfo> mSongList;
@@ -30,13 +26,15 @@ protected:
 
     // UITableViewDataSource
 
-    virtual uint32_t numberOfItems() const final;
-    virtual void cellForIndex(UITableViewCell &cell, uint32_t index) final;
+    virtual inline uint32_t numberOfItems() const final;
+    virtual inline void cellForIndex(UITableViewCell &cell, uint32_t index) final;
 
 public:
 
     SongMenu(Frame frame);
     virtual ~SongMenu();
+
+    SongInfo* songAt(uint32_t index);
 };
 
 #endif /* SONGMENU_HPP_ */

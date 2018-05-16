@@ -16,47 +16,44 @@
  *          p r e e t . w i k i @ g m a i l . c o m
  */
 
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-
 #include "tasks.hpp"
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-#include "storage.hpp"
-#include "io.hpp"
-
-#include "utilities.h"
-
 #include "MP3/UserInterface.hpp"
-
-#include "MP3/Drivers/ST7735.hpp"
-#include "MP3/Drivers/VS1053B.hpp"
 #include "MP3/MusicPlayer.hpp"
-#include "MP3/UI/UITableView.hpp"
 
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <iostream>
 #include "ff.h"
 
-#include <iostream>
-#include "printf_lib.h"
-
-UserInterface *ui;
-MusicPlayer *player;
-
 int main(void) {
-    MP3.setVolume(220);
-    MP3.enablePlayback();
 
-    // Initialize player
-    ui = new UserInterface(PRIORITY_HIGH);
+/*
+    FILE *f = fopen("1:rain_320.mp3", "r"); // read current song in SD Card
 
-    player = new MusicPlayer();
+    if   (f == NULL) printf("unable to open file.\n");
+    else             printf("successfully opened file.\n");
+
+    if (fseek(f, 0, SEEK_END) != 0) printf("fseek end error\n");
+    long fileSize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    printf("file size: %ld\n", fileSize);
+    fclose(f);
+
+    while(1);
+*/
+    MusicPlayer::sharedInstance();
+
+    UserInterface *ui = new UserInterface(PRIORITY_HIGH);
 
     scheduler_add_task(new terminalTask(PRIORITY_HIGH));
     scheduler_add_task(ui);
     scheduler_start();
+
 
     return 0;
 }

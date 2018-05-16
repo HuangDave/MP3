@@ -19,6 +19,11 @@ LabGPIO::LabGPIO(uint8_t port, uint8_t pin) : mPort(port), mPin(pin) {
     pinsel[2*mPort] &= ~(3 << (2*mPin));
 }
 
+LabGPIO::LabGPIO(uint8_t port, uint8_t pin, bool output, bool high) : LabGPIO(port, pin) {
+    setDirection(output);
+    set(high);
+}
+
 /// Destructor
 LabGPIO::~LabGPIO()                     { setLow(); }
 

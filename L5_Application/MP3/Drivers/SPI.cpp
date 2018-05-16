@@ -27,7 +27,7 @@ bool SPI::init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCL
     mPeripheral = peripheral;
     SSPn = SSP[mPeripheral];
 
-    SSPn->CR0 = (dataSize << 0);                                               // 4-bit data size select (DSS)
+    SSPn->CR0 = (dataSize << 0);                                                // 4-bit data size select (DSS)
     SSPn->CR1 |= (1 << 1);                                                      // enable SSE
     SSPn->CR1 &= ~(1 << 2);                                                     // clear MS to enable SSP as master
 

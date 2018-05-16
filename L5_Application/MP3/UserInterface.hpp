@@ -14,11 +14,11 @@
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-class UIView;
-class SongMenu;
+#include <MP3/UI/SongMenu.hpp>
+
 class NowPlayingView;
 
-class UserInterface: public scheduler_task {
+class UserInterface: public scheduler_task, protected virtual UITableViewDelegate {
 
 protected:
 
@@ -26,6 +26,10 @@ protected:
     NowPlayingView *mpNowPlaying;
 
     std::vector<UIView *> mpSubviews;
+
+    // UITableViewDelegate
+
+    virtual inline void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
 
 public:
 
