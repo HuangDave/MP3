@@ -18,29 +18,6 @@
 #include <MP3/MusicPlayer.hpp>
 #include <MP3/UI/NowPlayingView.hpp>
 
-/*
-typedef enum {
-    PLAY       = 0,         // play/puase
-    REWIND,                 // previous song
-    FORWARD,                // next song
-    MENU_SEL,               // select cursor item in menu
-    MENU_UP,                // cursor up
-    MENU_DOWN,              // cursor down
-    BACK,                   // menu back
-} UI_BUTTON_CONFIG;
-*/
-
-// TODO: remap buttons
-LabGPIO *buttons[] = {
-    new LabGPIO(0, 29),     // play button
-    new LabGPIO(0, 30),     // previous button
-    new LabGPIO(1, 19),     // forward button
-    new LabGPIO(1,  9),//(1, 20),     // menu select
-    new LabGPIO(1, 10),//(1, 22),     // menu cursor up
-    new LabGPIO(1, 14),//(1, 23),     // menu cursor down
-    new LabGPIO(1, 28),     //
-};
-
 UserInterface::~UserInterface() {
     delete mpSongMenu;   mpSongMenu   = NULL;
     delete mpNowPlaying; mpNowPlaying = NULL;
@@ -77,14 +54,33 @@ bool UserInterface::run(void *) {
 
     updateViews();
 
+    // TODO: remap GPIO buttons...
+
+    LabGPIO *bPlay     = new LabGPIO(1, 10);
+    LabGPIO *bPlayPrev = new LabGPIO(1, 14);
+    LabGPIO *bPlayNext = new LabGPIO(1, 15);
+
     LabGPIO *bMenuSel  = new LabGPIO(1,  9);//(1, 20),     // menu select
     LabGPIO *bMenuUp   = new LabGPIO(1, 10);//(1, 22),     // menu cursor up
     LabGPIO *bMenuDown = new LabGPIO(1, 14);//(1, 23),     // menu cursor down
 
+    LabGPIO *bVolUp    = new LabGPIO(1, 10);
+    LabGPIO *bVolDown  = new LabGPIO(1, 14);
+
+    MusicPlayer &player = MusicPlayer::sharedInstance();
+
     while (1) {
-        if      (bMenuSel->getLevel())  { mpSongMenu->selectCurrentRow(); }
+        if      (bPlay)                 { } // TODO: check player state to pause or resume...
+        else if (bPlayPrev->getLevel()) { player.playPrevious(); }
+        else if (bPlayNext->getLevel()) { player.playNext(); }
+
+        else if (bMenuSel->getLevel())  { mpSongMenu->selectCurrentRow(); }
         else if (bMenuUp->getLevel())   { mpSongMenu->moveCursor(UITableView::DIRECTION_UP); }
         else if (bMenuDown->getLevel()) { mpSongMenu->moveCursor(UITableView::DIRECTION_DOWN); }
+
+        else if (bVolUp->getLevel())    { player.incrementVolume(); }
+        else if (bVolDown->getLevel())  { player.decrementVolume(); }
+
         //else if (buttons[BACK]->getLevel())      { mpSongMenu->selectCurrentRow(); }
         vTaskDelay(100);
     }
