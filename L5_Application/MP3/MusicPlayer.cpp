@@ -113,14 +113,16 @@ void MusicPlayer::queue(SongInfo *song) {
     }
 }
 
-void MusicPlayer::pause() {
+bool MusicPlayer::pause() {
     // TODO: empty queue
     mDecoder.disablePlayback();
+    return false;
 }
 
-void MusicPlayer::resume() {
+bool MusicPlayer::resume() {
     mDecoder.enablePlayback();
     //xSemaphoreGive(mPlaySema);
+    return true;
 }
 
 void MusicPlayer::playNext() {

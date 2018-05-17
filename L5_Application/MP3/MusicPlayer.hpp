@@ -90,8 +90,8 @@ public:
     SongInfo* songAt(uint32_t idx) { return &mSongList.at(idx); }
 
     void queue(SongInfo *song);
-    void pause();
-    void resume();
+    bool pause();
+    bool resume();
 
     void playNext();
     void playPrevious();
