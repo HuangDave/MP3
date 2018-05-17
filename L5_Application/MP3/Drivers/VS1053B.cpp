@@ -68,8 +68,6 @@ void VS1053B::reset() {
     mpRESET->setHigh();
 
     while(!isReady());
-
-    mState = STOPPED;
 }
 
 void VS1053B::softReset() {
@@ -78,10 +76,6 @@ void VS1053B::softReset() {
 
 bool VS1053B::isReady() {
     return (*mpDREQ).getLevel();
-}
-
-VS1053B::DecoderState VS1053B::getState() {
-    return mState;
 }
 
 uint16_t VS1053B::readSCI(uint8_t addr) {
@@ -166,18 +160,18 @@ void VS1053B::enablePlayback() {
     writeSCI(SCI_WRAM, 0);
 
     clearDecodeTime();                                      // reset current decode time to 0:00
+}
 
-    mState = PLAYING;
+void VS1053B::resumePlayback() {
+    writeREG(SCI_MODE, SCI_MODE_DEFAULT);
+    writeREG(SCI_AUDATA, (AUDATA_44100 | AUDATA_STEREO));
 }
 
 void VS1053B::disablePlayback() {
-    mState = CANCELLING;
     writeREG(SCI_MODE, SCI_MODE_CANCEL);
 
     // wait for DREQ to be high and SM_CANCEL to be cleared...
     while (!isReady() || (readREG(SCI_MODE) & SM_CANCEL));
-
-    mState = PAUSED;
 }
 
 void VS1053B::buffer(uint8_t *songData, uint32_t len) {

@@ -11,6 +11,7 @@
 #include <MP3/Drivers/VS1053B.hpp>
 
 #include <vector>
+#include <memory>
 
 #include "FreeRTOS.h"
 #include "queue.h"
@@ -34,13 +35,35 @@ private:
     class BufferMusicTask;
     class StreamMusicTask;
 
-protected:
+public:
 
     typedef enum {
         STOPPED = 0,
         PLAYING,
         PAUSED
     } PlayerState;
+
+    static MusicPlayer& sharedInstance();
+
+    virtual ~MusicPlayer();
+
+    SongInfo* songAt(uint32_t idx) { return &mSongList.at(idx); }
+
+    PlayerState state();
+
+    void queue(SongInfo *song);
+    void pause();
+    void resume();
+
+    void playNext();
+    void playPrevious();
+
+    /// Increment the music player volume by 5%.
+    void incrementVolume();
+    /// Decrement the music player volume by 5%.
+    void decrementVolume();
+
+protected:
 
     typedef enum {
         PREVIOUS_TRACK = 0,
@@ -62,6 +85,9 @@ protected:
     /// Semaphore to puase or resume playback.
     //SemaphoreHandle_t mPlaySema;
 
+    /// Current state of music player.
+    PlayerState mState;
+
     /// Volume percentage, ranges from 0 to 100.
     uint8_t mVolume;
 
@@ -81,25 +107,6 @@ protected:
     virtual inline uint32_t numberOfItems() const final;
     virtual inline void cellForIndex(UITableViewCell &cell, uint32_t index) final;
 
-public:
-
-    static MusicPlayer& sharedInstance();
-
-    virtual ~MusicPlayer();
-
-    SongInfo* songAt(uint32_t idx) { return &mSongList.at(idx); }
-
-    void queue(SongInfo *song);
-    bool pause();
-    bool resume();
-
-    void playNext();
-    void playPrevious();
-
-    /// Increment the music player volume by 5%.
-    void incrementVolume();
-    /// Decrement the music player volume by 5%.
-    void decrementVolume();
 };
 
 /**
@@ -108,7 +115,7 @@ public:
 class MusicPlayer::BufferMusicTask final: public scheduler_task {
 
 protected:
-    VS1053B &mDecoder = VS1053B::sharedInstance();
+    MusicPlayer &player = MusicPlayer::sharedInstance();
     QueueHandle_t mSongQueue;
     QueueHandle_t mStreamQueue;
 

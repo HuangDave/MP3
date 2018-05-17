@@ -45,13 +45,6 @@ class VS1053B: public SPI {
 
 public:
 
-    typedef enum {
-        STOPPED    = (1 << 0),
-        PLAYING    = (1 << 1),
-        PAUSED     = (1 << 2),
-        CANCELLING = (1 << 3)
-    } DecoderState;
-
     // 32-bit Decoded Header Data
     typedef union {
         uint32_t bytes;
@@ -100,8 +93,6 @@ public:
     */
     inline bool isReady();
 
-    DecoderState getState();
-
     /**
      * Read 32-bit decoded header data.
      * If no data is decoded, the data will be empty.
@@ -121,6 +112,7 @@ public:
      * Enable device audio playback.
      */
     void enablePlayback();
+    void resumePlayback();
     void disablePlayback();
 
     /**
@@ -188,8 +180,6 @@ protected:
     LabGPIO *mpXDCS;
     /// Set to high to disable decoder SD read
     LabGPIO *mpSDCS;
-
-    DecoderState mState;
 
     VS1053B();
 

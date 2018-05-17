@@ -69,10 +69,9 @@ bool UserInterface::run(void *) {
 
     MusicPlayer &player = MusicPlayer::sharedInstance();
 
-    bool playing = true;
-
     while (1) {
-        if      (bPlay)                 { playing ? playing = player.pause() : playing = player.resume();} // TODO: check player state to pause or resume...
+
+        if      (bPlay)                 { player.state() == MusicPlayer::PLAYING ? player.pause() : player.resume(); } // TODO: check player state to pause or resume...
         else if (bPlayPrev->getLevel()) { player.playPrevious(); }
         else if (bPlayNext->getLevel()) { player.playNext(); }
 

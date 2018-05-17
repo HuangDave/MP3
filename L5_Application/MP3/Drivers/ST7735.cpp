@@ -5,11 +5,11 @@
  *      Author: huang
  */
 
-//#include <MP3/Drivers/ST7735.hpp>
+
+#include "ST7735.hpp"
 #include <stddef.h>
 #include "utilities.h"
 #include <L1/LabGPIO.hpp>
-#include "ST7735.hpp"
 
 #define ST7735_SWRESET (0x01)   // Software RESET
 #define ST7735_RDDID   (0x04)   // Read 24-bit device identification
@@ -150,7 +150,7 @@ inline void ST7735::writeColor(Color color, uint32_t repeat) {
     }
 }
 
-void ST7735::setAddrWindow(Frame frame) {
+inline void ST7735::setAddrWindow(Frame frame) {
     // Using orientation: X-Y exchange
     // swap x with y and width with height when setting address windrow
     writeCommand(ST7735_CASET);                     // write x-component of address window

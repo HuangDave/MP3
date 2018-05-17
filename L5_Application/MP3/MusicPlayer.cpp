@@ -31,6 +31,8 @@ MusicPlayer::MusicPlayer() {
 
     //mPlaySema    = xSemaphoreCreateBinary();
 
+    mState = STOPPED;
+
     // set default volume to 80 on startup
     mVolume = 80;
     setVolume(mVolume);
@@ -103,8 +105,14 @@ void MusicPlayer::fetchSongs() {
     }
 }
 
+MusicPlayer::PlayerState MusicPlayer::state() {
+    return mState;
+}
+
 void MusicPlayer::queue(SongInfo *song) {
     mDecoder.enablePlayback();
+
+    mState = PLAYING;
 
     if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
         bufferTask->newSongSelected = true;
@@ -113,16 +121,16 @@ void MusicPlayer::queue(SongInfo *song) {
     }
 }
 
-bool MusicPlayer::pause() {
+void MusicPlayer::pause() {
     // TODO: empty queue
     mDecoder.disablePlayback();
-    return false;
+    mState = PAUSED;
 }
 
-bool MusicPlayer::resume() {
-    mDecoder.enablePlayback();
+void MusicPlayer::resume() {
+    mDecoder.resumePlayback();
     //xSemaphoreGive(mPlaySema);
-    return true;
+    mState = PLAYING;
 }
 
 void MusicPlayer::playNext() {
@@ -164,7 +172,6 @@ inline void MusicPlayer::cellForIndex(UITableViewCell &cell, uint32_t index) {
 // BufferMusicTask Implementation
 
 bool MusicPlayer::BufferMusicTask::run(void *) {
-    // TODO: should stream selected song
 
     const uint32_t bufferSize = STREAM_QUEUE_BUFFER_SIZE;
 
@@ -180,12 +187,12 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
             for (uint32_t i = 0; i < fileSize/bufferSize; i++) {
                 uint8_t data[bufferSize] = { 0 };
 
-                //switch (mDecoder.getState()) {
-                //    case PAUSED: xSemaphoreTake(mPlaySema, portMAX_DELAY); break;
-                //    default: break;
-                //}
+                // if paused wait for player to be resumed to continue sending data...
+                // TODO: should use semaphore
+                while (player.state() == MusicPlayer::PAUSED) vTaskDelay(1);
 
-                if (newSongSelected) break;
+                // Terminate buffering if a new song is selected or player is completely stopped...
+                if (newSongSelected || player.state() == MusicPlayer::STOPPED) break;
 
                 if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
                     Storage::read(path, data, bufferSize, i * bufferSize);
@@ -211,9 +218,6 @@ bool MusicPlayer::StreamMusicTask::run(void *) {
         if (xQueueReceive(mStreamQueue, data, portMAX_DELAY)) {
 
             for (uint32_t j = 0; j < size/buffSize; j++){
-
-                //while (mDecoder.getState() == VS1053B::PAUSED) vTaskDelay(1);
-
                 MP3.buffer(data + (j*buffSize), buffSize);
             }
             vTaskDelay(15);
