@@ -19,7 +19,7 @@ LabGPIO::LabGPIO(uint8_t port, uint8_t pin, bool output, bool high) : mPort(port
     pinsel[2*mPort] &= ~(3 << (2*mPin));
 
     setDirection(output);
-    if (output) set(high);
+    output ? set(high) : set(false);
 }
 
 /// Destructor

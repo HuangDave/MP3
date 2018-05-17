@@ -18,10 +18,9 @@
 #include <MP3/MusicPlayer.hpp>
 #include <MP3/UI/NowPlayingView.hpp>
 
-// TODO: map buttons
-
+/*
 typedef enum {
-    PLAY      = 0,          // play/puase
+    PLAY       = 0,         // play/puase
     REWIND,                 // previous song
     FORWARD,                // next song
     MENU_SEL,               // select cursor item in menu
@@ -29,15 +28,17 @@ typedef enum {
     MENU_DOWN,              // cursor down
     BACK,                   // menu back
 } UI_BUTTON_CONFIG;
+*/
 
+// TODO: remap buttons
 LabGPIO *buttons[] = {
-    new LabGPIO(0, 0),
-    new LabGPIO(0, 0),
-    new LabGPIO(0, 0),
-    new LabGPIO(0, 0),
-    new LabGPIO(0, 0),
-    new LabGPIO(0, 0),
-    new LabGPIO(0, 0),
+    new LabGPIO(0, 29),     // play button
+    new LabGPIO(0, 30),     // previous button
+    new LabGPIO(1, 19),     // forward button
+    new LabGPIO(1,  9),//(1, 20),     // menu select
+    new LabGPIO(1, 10),//(1, 22),     // menu cursor up
+    new LabGPIO(1, 14),//(1, 23),     // menu cursor down
+    new LabGPIO(1, 28),     //
 };
 
 UserInterface::~UserInterface() {
@@ -76,14 +77,18 @@ bool UserInterface::run(void *) {
 
     updateViews();
 
-    // TODO: change to external interrupts
+    LabGPIO *bMenuSel  = new LabGPIO(1,  9);//(1, 20),     // menu select
+    LabGPIO *bMenuUp   = new LabGPIO(1, 10);//(1, 22),     // menu cursor up
+    LabGPIO *bMenuDown = new LabGPIO(1, 14);//(1, 23),     // menu cursor down
 
     while (1) {
-        if      (SW.getSwitch(1)) { mpSongMenu->moveCursor(UITableView::DIRECTION_UP);   }
-        else if (SW.getSwitch(2)) { mpSongMenu->moveCursor(UITableView::DIRECTION_DOWN); }
-        else if (SW.getSwitch(3)) { mpSongMenu->selectCurrentRow(); vTaskDelay(1000);    }
-        vTaskDelay(50);
+        if      (bMenuSel->getLevel())  { mpSongMenu->selectCurrentRow(); }
+        else if (bMenuUp->getLevel())   { mpSongMenu->moveCursor(UITableView::DIRECTION_UP); }
+        else if (bMenuDown->getLevel()) { mpSongMenu->moveCursor(UITableView::DIRECTION_DOWN); }
+        //else if (buttons[BACK]->getLevel())      { mpSongMenu->selectCurrentRow(); }
+        vTaskDelay(100);
     }
+
     return true;
 }
 

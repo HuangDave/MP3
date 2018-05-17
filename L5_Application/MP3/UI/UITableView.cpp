@@ -37,7 +37,7 @@ UITableView::~UITableView() {
 
 void UITableView::updateTableIfNeeded() {
 
-    if (mpCells == NULL && mRows > 0 || mItemCount != (*mpDataSource).numberOfItems()) {
+    if ( (mpCells == NULL && mRows > 0) || mItemCount != (*mpDataSource).numberOfItems()) {
 
         mItemCount = (*mpDataSource).numberOfItems();
 
@@ -90,7 +90,7 @@ void UITableView::moveCursor(CursorDirection direction) {
     const uint32_t prevPos = mCursorPos;
 
     switch (direction) {
-        
+
         case DIRECTION_UP: {
             // clamp cursor to top
             if (mCursorPos != 0) { // cursor is not already at the top
@@ -170,12 +170,18 @@ void UITableViewCell::reDraw() {
 
     Frame selFrame = Frame { mFrame.x + 2, mFrame.y, 4, 8 };
 
-    uint8_t len = mTextLen > 15 ? 18 : mTextLen;
+    uint8_t len = strlen(mpText);
+    char str[len];
 
-    char str[18];
-    strncpy(str, mpText, 15);
-    for (uint8_t i = 15; i < 18; i++)
-        str[i] = '.';
+    if (len > 21) {
+        len = 21;
+        strncpy(str, mpText, len);
+        for (uint8_t i = len-3; i < len; i++)
+            str[i] = '.';
+
+    } else {
+        strncpy(str, mpText, len);
+    }
 
     if   (mHighlighted) LCDDisplay.drawBitmap(selFrame, selIcon,   BLACK_COLOR, mBackgroundColor);
     else                LCDDisplay.drawBitmap(selFrame, unselIcon, BLACK_COLOR, mBackgroundColor);

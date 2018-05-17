@@ -66,8 +66,15 @@ void NowPlayingView::reDraw() {
     Frame playIconFrame = Frame { mFrame.x + 5, mFrame.y + 6, 8, 16 };
     LCDDisplay.drawBitmap(playIconFrame, playIcon, BLACK_COLOR, mBackgroundColor);
 
-    // TODO: move to UILabel Class
     uint8_t len = strlen(mpSongName);
+    if (len > 20) len = 20;
+
+    char str[len];
+    strncpy(str, mpSongName, len);
+    for (uint8_t i = len - 3; i < len; i++)
+        str[i] = '.';
+
+    // TODO: move to UILabel Class
     for (uint8_t i = 0; i < len; i++) {
         const uint8_t padding = mFrame.x + 20;
         const uint8_t charSpacing = (i * 1);
