@@ -24,7 +24,7 @@
 #include "MP3/UserInterface.hpp"
 #include "MP3/MusicPlayer.hpp"
 
-
+#include "utilities.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>

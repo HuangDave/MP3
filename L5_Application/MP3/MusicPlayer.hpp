@@ -52,11 +52,12 @@ public:
     PlayerState state();
 
     void queue(SongInfo *song);
+    void queue(SongInfo *song, uint32_t index);
     void pause();
     void resume();
 
-    void playNext();
     void playPrevious();
+    void playNext();
 
     /// Increment the music player volume by 5%.
     void incrementVolume();
@@ -67,7 +68,6 @@ protected:
 
     typedef enum {
         PREVIOUS_TRACK = 0,
-        CURRENT_TRACK,
         NEXT_TRACK,
     } QueueOption;
 
@@ -82,6 +82,8 @@ protected:
     QueueHandle_t mStreamQueue;
     QueueHandle_t mSongQueue;
 
+    SemaphoreHandle_t mPlayMutex;
+
     /// Semaphore to puase or resume playback.
     //SemaphoreHandle_t mPlaySema;
 
@@ -91,9 +93,13 @@ protected:
     /// Volume percentage, ranges from 0 to 100.
     uint8_t mVolume;
 
+    uint32_t mSongIndex;
+
     MusicPlayer();
 
     void fetchSongs();
+
+    void updateBuffer();
 
     /**
      * Set the volume of the decoder.
@@ -115,12 +121,12 @@ protected:
 class MusicPlayer::BufferMusicTask final: public scheduler_task {
 
 protected:
-    MusicPlayer &player = MusicPlayer::sharedInstance();
     QueueHandle_t mSongQueue;
     QueueHandle_t mStreamQueue;
 
 public:
 
+    MusicPlayer *player;
     bool newSongSelected;
 
     BufferMusicTask(uint8_t priority, QueueHandle_t songQueue, QueueHandle_t streamQueue) : scheduler_task("buffer_song", 1024 * 3, priority), mSongQueue(songQueue), mStreamQueue(streamQueue) { };
@@ -133,7 +139,6 @@ public:
 class MusicPlayer::StreamMusicTask final: public scheduler_task {
 
 protected:
-    VS1053B &mDecoder = VS1053B::sharedInstance();
     QueueHandle_t mStreamQueue;
 
 public:

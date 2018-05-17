@@ -52,15 +52,17 @@ bool UserInterface::init() {
 
 bool UserInterface::run(void *) {
 
+    vTaskDelay(10);
+
     updateViews();
 
     // TODO: remap GPIO buttons...
 
     LabGPIO *bPlay     = new LabGPIO(0, 29);
-    LabGPIO *bPlayPrev = new LabGPIO(0, 30);
-    LabGPIO *bPlayNext = new LabGPIO(1, 19);
+    LabGPIO *bPlayPrev = new LabGPIO(1,14);//(0, 30);
+    LabGPIO *bPlayNext = new LabGPIO(1,15);//(1, 19);
 
-    LabGPIO *bMenuSel  = new LabGPIO(1, 20);//(1, 20),     // menu select
+    LabGPIO *bMenuSel  = new LabGPIO(1,9);//(1, 20);//(1, 20),     // menu select
     LabGPIO *bMenuUp   = new LabGPIO(1, 22);//(1, 22),     // menu cursor up
     LabGPIO *bMenuDown = new LabGPIO(1, 23);//(1, 23),     // menu cursor down
 
@@ -71,9 +73,9 @@ bool UserInterface::run(void *) {
 
     while (1) {
 
-        if      (bPlay)                 { player.state() == MusicPlayer::PLAYING ? player.pause() : player.resume(); } // TODO: check player state to pause or resume...
-        else if (bPlayPrev->getLevel()) { player.playPrevious(); }
-        else if (bPlayNext->getLevel()) { player.playNext(); }
+        if      (bPlay->getLevel())     {} //{ player.state() == MusicPlayer::PLAYING ? player.pause() : player.resume(); } // TODO: check player state to pause or resume...
+        else if (bPlayPrev->getLevel()) { player.playPrevious(); vTaskDelay(1000); }
+        else if (bPlayNext->getLevel()) { player.playNext();     vTaskDelay(1000); }
 
         else if (bMenuSel->getLevel())  { mpSongMenu->selectCurrentRow(); }
         else if (bMenuUp->getLevel())   { mpSongMenu->moveCursor(UITableView::DIRECTION_UP); }
@@ -83,7 +85,7 @@ bool UserInterface::run(void *) {
         else if (bVolDown->getLevel())  { player.decrementVolume(); }
 
         //else if (buttons[BACK]->getLevel())      { mpSongMenu->selectCurrentRow(); }
-        vTaskDelay(100);
+        vTaskDelay(50);
     }
 
     return true;
@@ -110,6 +112,6 @@ inline void UserInterface::didSelectCellAt(UITableViewCell &cell, uint32_t index
     (*mpNowPlaying).setSongName(song->name);
 
     // queue song for playback
-    player.queue(song);
+    player.queue(song, index);
     //player.queue(player.songAt(index+1));
 }
