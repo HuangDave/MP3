@@ -56,21 +56,23 @@ bool UserInterface::run(void *) {
 
     // TODO: remap GPIO buttons...
 
-    LabGPIO *bPlay     = new LabGPIO(1, 10);
-    LabGPIO *bPlayPrev = new LabGPIO(1, 14);
-    LabGPIO *bPlayNext = new LabGPIO(1, 15);
+    LabGPIO *bPlay     = new LabGPIO(0, 29);
+    LabGPIO *bPlayPrev = new LabGPIO(0, 30);
+    LabGPIO *bPlayNext = new LabGPIO(1, 19);
 
-    LabGPIO *bMenuSel  = new LabGPIO(1,  9);//(1, 20),     // menu select
-    LabGPIO *bMenuUp   = new LabGPIO(1, 10);//(1, 22),     // menu cursor up
-    LabGPIO *bMenuDown = new LabGPIO(1, 14);//(1, 23),     // menu cursor down
+    LabGPIO *bMenuSel  = new LabGPIO(1, 20);//(1, 20),     // menu select
+    LabGPIO *bMenuUp   = new LabGPIO(1, 22);//(1, 22),     // menu cursor up
+    LabGPIO *bMenuDown = new LabGPIO(1, 23);//(1, 23),     // menu cursor down
 
-    LabGPIO *bVolUp    = new LabGPIO(1, 10);
-    LabGPIO *bVolDown  = new LabGPIO(1, 14);
+    LabGPIO *bVolUp    = new LabGPIO(1, 28);
+    LabGPIO *bVolDown  = new LabGPIO(1, 29);
 
     MusicPlayer &player = MusicPlayer::sharedInstance();
 
+    bool playing = true;
+
     while (1) {
-        if      (bPlay)                 { } // TODO: check player state to pause or resume...
+        if      (bPlay)                 { playing ? playing = player.pause() : playing = player.resume();} // TODO: check player state to pause or resume...
         else if (bPlayPrev->getLevel()) { player.playPrevious(); }
         else if (bPlayNext->getLevel()) { player.playNext(); }
 
