@@ -9,8 +9,9 @@
 #define ST7735_HPP_
 
 #include "SPI.hpp"
-
 #include <MP3/gfx.h>
+
+class LabGPIO;
 
 #define LCDDisplay ST7735::sharedInstance()
 
@@ -39,7 +40,7 @@ protected:
 
     /**
      * Write a byte of data to display.
-     * @param  data
+     * @param  data 8-bit data
      * @return
      */
     inline uint8_t write(uint8_t data);
@@ -47,7 +48,7 @@ protected:
     /**
      * Write a word to display.
      *
-     * @param  data
+     * @param  data 16-bit data.
      * @return
      */
     inline uint16_t writeWord(uint16_t data);
@@ -58,28 +59,38 @@ protected:
      */
     inline void writeCommand(uint8_t cmd);
 
+    /**
+     * Set address window for drawing.
+     *
+     * @param frame Frame of window.
+     */
+    inline void setAddrWindow(Frame frame);
+
+    /**
+     * Set pixel color.
+     * @param color
+     * @param repeat
+     */
+    inline void writeColor(Color color, uint32_t repeat = 1);
+
 public:
 
     static ST7735& sharedInstance();
 
     virtual ~ST7735();
 
-    /**
-     * Toggle hardware reset.
-     */
+    /// Toggle hardware reset.
     void toggleRESET();
-
-
+    /// Toggle sleep display to save power.
     void toggleSleep(bool on);
+    /// Turn display on or off.
     void toggleDisplay(bool on);
 
-    inline void writeColor(Color color, uint32_t repeat = 1);
-
-    inline void setAddrWindow(Frame frame);
     void fillRect(Frame frame, Color c);
 
     /**
      * Draw font character starting at given point.
+     *
      * @param p               Point to draw character.
      * @param font            Pointer to bitmap of character to draw.
      * @param color           Font color.
@@ -89,6 +100,7 @@ public:
 
     /**
      * Draw an 8-bit wide bitmap in specified frame.
+     *
      * @param frame           Frame in which to draw bitmap.
      * @param bitmap          Pointer to bitmap to draw.
      * @param color           Color of bitmap.
@@ -98,6 +110,7 @@ public:
 
     /**
      * Draw a 16-bit wide bitmap in specified frame.
+     *
      * @param frame           Frame in which to draw bitmap.
      * @param bitmap          Pointer to bitmap to draw.
      * @param color           Color of bitmap.

@@ -19,25 +19,28 @@
 #include <MP3/UI/SongMenu.hpp>
 #include <MP3/UI/NowPlayingView.hpp>
 
-/*
+// TODO: map buttons
+
 typedef enum {
-    PLAY      = 0,           // play/puase
-    MENU_SEL,
-    MENU_UP,
-    MENU_DOWN,
-    BACK,
+    PLAY      = 0,          // play/puase
+    REWIND,                 // previous song
+    FORWARD,                // next song
+    MENU_SEL,               // select cursor item in menu
+    MENU_UP,                // cursor up
+    MENU_DOWN,              // cursor down
+    BACK,                   // menu back
 } UI_BUTTON_CONFIG;
 
 LabGPIO *buttons[] = {
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
+    new LabGPIO(0, 0, true, true),
+    new LabGPIO(0, 0, true, true),
+    new LabGPIO(0, 0, true, true),
+    new LabGPIO(0, 0, true, true),
+    new LabGPIO(0, 0, true, true),
+    new LabGPIO(0, 0, true, true),
+    new LabGPIO(0, 0, true, true),
 };
-*/
+
 UserInterface::~UserInterface() {
     delete mpSongMenu;   mpSongMenu   = NULL;
     delete mpNowPlaying; mpNowPlaying = NULL;

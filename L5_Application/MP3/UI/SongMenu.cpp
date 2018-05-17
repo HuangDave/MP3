@@ -56,6 +56,7 @@ void SongMenu::fetchSongs() {
             if (res != FR_OK || fileInfo.fname[0] == 0) break;
 
             if (!(fileInfo.fattrib & AM_DIR) && (strcmp(ext, mp3[0]) || strcmp(ext, mp3[1]))) {
+                
                 SongInfo song;
 
                 const char *fullName = fileInfo.lfname[0] == 0 ? fileInfo.fname : fileInfo.lfname;

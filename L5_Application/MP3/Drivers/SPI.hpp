@@ -12,7 +12,7 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-#include "../../L1/LabGPIO.hpp"
+class LabGPIO;
 
 class SPI {
 
@@ -28,7 +28,7 @@ public:
         PCLK_DIV_1 = 0b01,
         PCLK_DIV_2 = 0b10,
         PCLK_DIV_8 = 0b11
-    } PCLK_Rate;
+    } PCLK_DIV;
 
     typedef enum {
         DATASIZE_4_BIT  = 0x3,
@@ -79,18 +79,7 @@ public:
      *
      * @return           Returns true if initialization was successful
      */
-    bool init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCLK_Rate rate);
-
-    /**
-     * Configure a GPIO to be used as a SEL pin.
-     *
-     * @param  port   GPIO port number
-     * @param  pin    GPIO pin number
-     * @param  output If TRUE, configure the pin to output.
-     * @param  high   If TRUE, configure the pin to output high.
-     * @return        Returns a pointer to the LabGPIO instance.
-     */
-    LabGPIO* configureGPIO(uint8_t port, uint32_t pin, bool output, bool high);
+    bool init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCLK_DIV clkdiv);
 
     /// Locks the SPI bus and sets CS to low if successfull.
     void selectCS();
@@ -116,10 +105,10 @@ protected:
 
     volatile LPC_SSP_TypeDef *SSPn;
 
-    SSP_Peripheral mPeripheral;
-
     /// Used in master mode for slave sel.
     LabGPIO *mpCS;
+
+    SSP_Peripheral mPeripheral;
 
     // Protected constructor.
     SPI();
@@ -128,8 +117,8 @@ private:
 
     static volatile LPC_SSP_TypeDef *SSP[];
 
-    void enableSSP0(PCLK_Rate rate);
-    void enableSSP1(PCLK_Rate rate);
+    void enableSSP0(PCLK_DIV clkdiv);
+    void enableSSP1(PCLK_DIV clkdiv);
 
 };
 

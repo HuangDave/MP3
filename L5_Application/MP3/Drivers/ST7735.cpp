@@ -6,12 +6,9 @@
  */
 
 #include <MP3/Drivers/ST7735.hpp>
-
-#include <stdlib.h>
 #include <stddef.h>
-#include <stdio.h>
-
 #include "utilities.h"
+#include <L1/LabGPIO.hpp>
 
 #define ST7735_SWRESET (0x01)   // Software RESET
 #define ST7735_RDDID   (0x04)   // Read 24-bit device identification
@@ -44,9 +41,9 @@ ST7735::ST7735() {
 
     SSPn->CR1 &= ~(1 << 2);                         // clear MS to enable SSP as master
 
-    mpCS    = configureGPIO(2, 7, true, true);      // configure P2.9 for CS (chip select)
-    mpDC    = configureGPIO(2, 8, true, true);      // configure P0.1 for A0 (D/C data transfer select)
-    mpRESET = configureGPIO(2, 9, true, true);      // configure P0.0 for RESET
+    mpCS    = new LabGPIO(2, 7, true, true);      // configure P2.9 for CS (chip select)
+    mpDC    = new LabGPIO(2, 8, true, true);      // configure P0.1 for A0 (D/C data transfer select)
+    mpRESET = new LabGPIO(2, 9, true, true);      // configure P0.0 for RESET
 
     toggleRESET();
 }
