@@ -7,7 +7,6 @@
 
 #include <MP3/MusicPlayer.hpp>
 
-#include <stdlib.h>
 #include <stdio.h>
 #include "string.h"
 #include "ff.h"
@@ -28,7 +27,7 @@ MusicPlayer& MusicPlayer::sharedInstance() {
 MusicPlayer::MusicPlayer() {
     mStreamQueue = xQueueCreate(STREAM_QUEUE_SIZE, sizeof(uint8_t) * STREAM_QUEUE_BUFFER_SIZE);
     mSongQueue   = xQueueCreate(SONG_QUEUE_SIZE,   sizeof(SongInfo));
-
+    mPlayMutex   = xSemaphoreCreateMutex();
     //mPlaySema    = xSemaphoreCreateBinary();
 
     mState = STOPPED;
@@ -39,8 +38,10 @@ MusicPlayer::MusicPlayer() {
 
     fetchSongs();
 
-    bufferTask = new BufferMusicTask(PRIORITY_LOW, mSongQueue, mStreamQueue);
+    mSongIndex = 0;
 
+    bufferTask = new BufferMusicTask(PRIORITY_LOW, mSongQueue, mStreamQueue);
+    bufferTask->player = this;
     scheduler_add_task(bufferTask);
     scheduler_add_task(new StreamMusicTask(PRIORITY_LOW, mStreamQueue));
 }
@@ -109,12 +110,15 @@ MusicPlayer::PlayerState MusicPlayer::state() {
     return mState;
 }
 
-void MusicPlayer::queue(SongInfo *song) {
+void MusicPlayer::queue(SongInfo *song, uint32_t index) {
     mDecoder.enablePlayback();
 
     mState = PLAYING;
 
     if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
+        xQueueReset(mSongQueue);
+        mSongIndex = index;
+
         bufferTask->newSongSelected = true;
         xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
         xQueueSend(mSongQueue, &song, portMAX_DELAY);
@@ -122,7 +126,6 @@ void MusicPlayer::queue(SongInfo *song) {
 }
 
 void MusicPlayer::pause() {
-    // TODO: empty queue
     mDecoder.disablePlayback();
     mState = PAUSED;
 }
@@ -133,12 +136,26 @@ void MusicPlayer::resume() {
     mState = PLAYING;
 }
 
-void MusicPlayer::playNext() {
-    // TODO: implement
+void MusicPlayer::playPrevious() {
+    if (!xSemaphoreTake(mPlayMutex, 10)) return;
+
+    uint32_t index = mSongIndex;
+    if (index == 0) index = mSongList.size() - 1;
+    else            index -= 1;
+
+    queue(&mSongList.at(index), index);
+    xSemaphoreGive(mPlayMutex);
 }
 
-void MusicPlayer::playPrevious() {
-    // TODO: implement
+void MusicPlayer::playNext() {
+    if (!xSemaphoreTake(mPlayMutex, 10)) return;
+
+    uint32_t index = mSongIndex;
+    if (index == mSongList.size() - 1) index = 0;
+    else                               index += 1;
+
+    queue(&mSongList.at(index), index);
+    xSemaphoreGive(mPlayMutex);
 }
 
 void MusicPlayer::incrementVolume() {
@@ -189,10 +206,10 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
 
                 // if paused wait for player to be resumed to continue sending data...
                 // TODO: should use semaphore
-                while (player.state() == MusicPlayer::PAUSED) vTaskDelay(1);
+                while (player->state() == MusicPlayer::PAUSED) vTaskDelay(1);
 
                 // Terminate buffering if a new song is selected or player is completely stopped...
-                if (newSongSelected || player.state() == MusicPlayer::STOPPED) break;
+                if (newSongSelected || player->state() == MusicPlayer::STOPPED) goto ENDSTREAM;
 
                 if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
                     Storage::read(path, data, bufferSize, i * bufferSize);
@@ -201,6 +218,12 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
                 }
                 vTaskDelay(15);
             }
+
+            // end of song or user did not manually select a song, play next song....
+            player->playNext();
+
+            // new song was selected, or user is skipping song
+            ENDSTREAM:;
         }
     }
 
