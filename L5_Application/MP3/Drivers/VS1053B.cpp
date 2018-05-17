@@ -7,9 +7,8 @@
 
 #include <MP3/Drivers/VS1053B.hpp>
 #include <stddef.h>
-#include "io.hpp"
-#include <stdio.h>
 #include "utilities.h"
+#include <L1/LabGPIO.hpp>
 
 #define SCI_WRITE       (0x02)
 #define SCI_READ        (0x03)
@@ -42,11 +41,11 @@ VS1053B::VS1053B() {
     SSPn->CPSR = 16; // set initial pclk to ~3MHz = 12MHz / 4 for SCI write at reset
     //SSPn->CR0 &= ~(0xFF << 8); // set SCR to 0
 
-    mpDREQ  = configureGPIO(2, 4, false, false);           // Configure P2.4 as input for DREQ
-    mpRESET = configureGPIO(2, 3, true,  true);            // configure P2.3 for RESET
-    mpCS    = configureGPIO(2, 2, true,  true);            // configure P2.2 for CS
-    mpSDCS  = configureGPIO(2, 1, true,  true);            // Configure P2.1 for SDCS
-    mpXDCS  = configureGPIO(2, 0, true,  true);            // Configure P2.0 for XDCS
+    mpDREQ  = new LabGPIO(2, 4, false, false);           // Configure P2.4 as input for DREQ
+    mpRESET = new LabGPIO(2, 3, true,  true);            // configure P2.3 for RESET
+    mpCS    = new LabGPIO(2, 2, true,  true);            // configure P2.2 for CS
+    mpSDCS  = new LabGPIO(2, 1, true,  true);            // Configure P2.1 for SDCS
+    mpXDCS  = new LabGPIO(2, 0, true,  true);            // Configure P2.0 for XDCS
 
     reset();
 

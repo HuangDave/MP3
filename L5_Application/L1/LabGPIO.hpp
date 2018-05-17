@@ -23,9 +23,7 @@ public:
      * @param {uint8_t} port - port number between 0 and 1
      * @param {uint8_t} pin  - pin number between 0 and 32
      */
-    LabGPIO(uint8_t port, uint8_t pin);
-
-    LabGPIO(uint8_t port, uint8_t pin, bool output, bool high);
+    LabGPIO(uint8_t port, uint8_t pin, bool output = false, bool high = false);
 
     uint8_t getPortNum() const;
 

@@ -16,28 +16,30 @@
 #include <L1/LabGPIO.hpp>
 #include <MP3/Drivers/ST7735.hpp>
 #include <MP3/MusicPlayer.hpp>
-#include <MP3/UI/SongMenu.hpp>
 #include <MP3/UI/NowPlayingView.hpp>
 
-/*
+// TODO: map buttons
+
 typedef enum {
-    PLAY      = 0,           // play/puase
-    MENU_SEL,
-    MENU_UP,
-    MENU_DOWN,
-    BACK,
+    PLAY      = 0,          // play/puase
+    REWIND,                 // previous song
+    FORWARD,                // next song
+    MENU_SEL,               // select cursor item in menu
+    MENU_UP,                // cursor up
+    MENU_DOWN,              // cursor down
+    BACK,                   // menu back
 } UI_BUTTON_CONFIG;
 
 LabGPIO *buttons[] = {
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
-    new LabGPIO( , , true, true),
+    new LabGPIO(0, 0),
+    new LabGPIO(0, 0),
+    new LabGPIO(0, 0),
+    new LabGPIO(0, 0),
+    new LabGPIO(0, 0),
+    new LabGPIO(0, 0),
+    new LabGPIO(0, 0),
 };
-*/
+
 UserInterface::~UserInterface() {
     delete mpSongMenu;   mpSongMenu   = NULL;
     delete mpNowPlaying; mpNowPlaying = NULL;
@@ -50,16 +52,21 @@ bool UserInterface::init() {
 
     // Initialize song menu
     const uint8_t kMenuHeight = 100;
+    const uint8_t kMenuRowHeight = 10;
+    const uint8_t kNumRows = 10;
 
-    mpSongMenu = new SongMenu(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
-    (*mpSongMenu).setDelegate((UITableViewDelegate *)this);
+    mpSongMenu = new UITableView(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
+    mpSongMenu->setDelegate((UITableViewDelegate *) this);
+    mpSongMenu->setDataSource((UITableViewDataSource *) &(MusicPlayer::sharedInstance()));
+    mpSongMenu->setRowHeight(kMenuRowHeight);
+    mpSongMenu->setNumberOfRows(kNumRows);
     addSubview(mpSongMenu);
 
     // Initialize Now Player view
     const uint8_t kNowPlayingHeight = SCREEN_HEIGHT - kMenuHeight;
 
     mpNowPlaying = new NowPlayingView(Frame {0, kMenuHeight, SCREEN_WIDTH, kNowPlayingHeight});
-    (*mpNowPlaying).setBackgroundColor(BLUE_COLOR);
+    mpNowPlaying->setBackgroundColor(BLUE_COLOR);
     addSubview(mpNowPlaying);
 
     return true;
@@ -92,16 +99,15 @@ void UserInterface::updateViews() {
 
 // UITableViewDelegate Implementation
 
-// TODO: move to UserInterface
 inline void UserInterface::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
 
-    SongInfo *song = (*mpSongMenu).songAt(index);
+    MusicPlayer &player = MusicPlayer::sharedInstance();
+    SongInfo *song = player.songAt(index);
 
     // update NowPlayingView to display current song...
     (*mpNowPlaying).setSongName(song->name);
 
     // queue song for playback
-    MusicPlayer &player = MusicPlayer::sharedInstance();
     player.queue(song);
-    player.queue((*mpSongMenu).songAt(index+1));
+    //player.queue(player.songAt(index+1));
 }

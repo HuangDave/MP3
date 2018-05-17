@@ -6,7 +6,7 @@
  */
 
 #include <MP3/Drivers/SPI.hpp>
-
+#include <L1/LabGPIO.hpp>
 
 volatile LPC_SSP_TypeDef* SPI::SSP[] = { LPC_SSP0, LPC_SSP1 };
 
@@ -18,10 +18,10 @@ SPI::~SPI() {
     delete mpCS; mpCS = NULL;
 }
 
-bool SPI::init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCLK_Rate rate) {
+bool SPI::init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCLK_DIV clkdiv) {
     switch (peripheral) {                                                       // enable PCLK for SPI
-        case SSP0: enableSSP0(rate); break;
-        case SSP1: enableSSP1(rate); break;
+        case SSP0: enableSSP0(clkdiv); break;
+        case SSP1: enableSSP1(clkdiv); break;
     }
 
     mPeripheral = peripheral;
@@ -34,11 +34,11 @@ bool SPI::init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCL
     return true;
 }
 
-void SPI::enableSSP0(PCLK_Rate rate) {
+void SPI::enableSSP0(PCLK_DIV clkdiv) {
     LPC_SC->PCONP |= (1 << 21);
 
     LPC_SC->PCLKSEL1 &= ~(3 << 10);                                             // enable pclk for PCLK_SSP0
-    LPC_SC->PCLKSEL1 |= (rate << 10);
+    LPC_SC->PCLKSEL1 |= (clkdiv << 10);
 
     LPC_PINCON->PINSEL0 &= ~(3 << 30);                                          // enable SCK0
     LPC_PINCON->PINSEL0 |=  (2 << 30);
@@ -46,21 +46,14 @@ void SPI::enableSSP0(PCLK_Rate rate) {
     LPC_PINCON->PINSEL1 |=  (2 << 2) |  (2 << 4);
 }
 
-void SPI::enableSSP1(PCLK_Rate rate) {
+void SPI::enableSSP1(PCLK_DIV clkdiv) {
     LPC_SC->PCONP |= (1 << 10);
 
     LPC_SC->PCLKSEL0 &= ~(3 << 20);                                             // enable pclk for PCLK_SSP1
-    LPC_SC->PCLKSEL0 |= (rate << 20);
+    LPC_SC->PCLKSEL0 |= (clkdiv << 20);
 
     LPC_PINCON->PINSEL0 &= ~(3 << 14) | ~(3 << 16) | ~(3 << 18);                // enable SCK1, MISO1, MOSI1
     LPC_PINCON->PINSEL0 |=  (2 << 16) |  (2 << 18);
-}
-
-LabGPIO* SPI::configureGPIO(uint8_t port, uint32_t pin, bool output, bool high) {
-    LabGPIO *gpio = new LabGPIO(port, pin);
-    gpio->setDirection(output);
-    if (output) gpio->set(high);
-    return gpio;
 }
 
 void SPI::selectCS() {
