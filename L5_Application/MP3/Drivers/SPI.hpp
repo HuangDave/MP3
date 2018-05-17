@@ -12,7 +12,7 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-#include "../../L1/LabGPIO.hpp"
+class LabGPIO;
 
 class SPI {
 
@@ -28,7 +28,7 @@ public:
         PCLK_DIV_1 = 0b01,
         PCLK_DIV_2 = 0b10,
         PCLK_DIV_8 = 0b11
-    } PCLK_Rate;
+    } PCLK_DIV;
 
     typedef enum {
         DATASIZE_4_BIT  = 0x3,
@@ -64,30 +64,22 @@ public:
         } __attribute__((packed));
     } SSP_SR;
 
+    /// Array containing a CS mutex for SSP0 and SSP1. Locks the SPI bus when a slave is selected.
+    static SemaphoreHandle_t spiMutex[2];
+
     /**
      * 1) Powers on SPPn peripheral
      * 2) Set peripheral clock
      * 3) Sets pins for specified peripheral to MOSI, MISO, and SCK
      *
-     * @param peripheral    - which peripheral SSP0 or SSP1 you want to select.
-     * @param dataSize      - transfer size data width; To optimize the code, look for a pattern in the datasheet
-     * @param format        -  is the code format for which synchronous serial protocol you want to use.
-     * @param clkdiv        - is the how much to divide the clock for SSP; take care of error cases such as the value of 0, 1, and odd numbers
+     * @param peripheral which peripheral SSP0 or SSP1 you want to select.
+     * @param dataSize   transfer size data width; To optimize the code, look for a pattern in the datasheet
+     * @param format     is the code format for which synchronous serial protocol you want to use.
+     * @param clkdiv     is the how much to divide the clock for SSP; take care of error cases such as the value of 0, 1, and odd numbers
      *
-     * @return true if initialization was successful
+     * @return           Returns true if initialization was successful
      */
-    bool init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCLK_Rate rate);
-
-    /**
-     * Configure a GPIO to be used as a SEL pin.
-     *
-     * @param  port   GPIO port number
-     * @param  pin    GPIO pin number
-     * @param  output If TRUE, configure the pin to output.
-     * @param  high   If TRUE, configure the pin to output high.
-     * @return        Returns a pointer to the LabGPIO instance.
-     */
-    LabGPIO* configureGPIO(uint8_t port, uint32_t pin, bool output, bool high);
+    bool init(SSP_Peripheral peripheral, DataSize dataSize, FrameMode mode, PCLK_DIV clkdiv);
 
     /// Locks the SPI bus and sets CS to low if successfull.
     void selectCS();
@@ -111,15 +103,12 @@ public:
 
 protected:
 
-    /// Array containing a CS mutex for SSP0 and SSP1. Locks the SPI bus when a slave is selected.
-    static SemaphoreHandle_t spiMutex[2];
-
     volatile LPC_SSP_TypeDef *SSPn;
-
-    SSP_Peripheral mPeripheral;
 
     /// Used in master mode for slave sel.
     LabGPIO *mpCS;
+
+    SSP_Peripheral mPeripheral;
 
     // Protected constructor.
     SPI();
@@ -128,8 +117,8 @@ private:
 
     static volatile LPC_SSP_TypeDef *SSP[];
 
-    void enableSSP0(PCLK_Rate rate);
-    void enableSSP1(PCLK_Rate rate);
+    void enableSSP0(PCLK_DIV clkdiv);
+    void enableSSP1(PCLK_DIV clkdiv);
 
 };
 

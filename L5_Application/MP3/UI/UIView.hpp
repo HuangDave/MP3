@@ -9,13 +9,13 @@
 #define UIVIEW_HPP_
 
 #include "../gfx.h"
-#include <stddef.h>
+
 
 class UIView {
 
 public:
 
-    UIView(Frame frame);
+    UIView(Frame frame) : mFrame(frame), mBackgroundColor(WHITE_COLOR) { };
     virtual ~UIView();
 
     void setFrame(Frame frame);
@@ -30,7 +30,6 @@ protected:
 
     Frame mFrame;
     Color mBackgroundColor;
-
 };
 
 #endif /* UIVIEW_HPP_ */

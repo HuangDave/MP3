@@ -10,60 +10,140 @@
 
 #include <MP3/Drivers/VS1053B.hpp>
 
+#include <vector>
+#include <memory>
+
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-class DecodeTask;
+#include <MP3/UI/UITableView.hpp>
 
-class MusicPlayer {
+typedef struct {
+    /// Full file path to song.
+    char *path;
+    /// Formated file name w/o dir prefix and extension type.
+    char *name;
+    /// total size of file in bytes.
+    uint32_t fileSize;
+} SongInfo;
 
-protected:
+class MusicPlayer: protected virtual UITableViewDataSource {
 
-    VS1053B &mDecoder = VS1053B::sharedInstance();
+private:
 
-    DecodeTask *mDecodeTask;
-
-    QueueHandle_t mStreamQueue;
-    char *mpCurrentSongName;
-
-    void buffer(uint8_t songData[32]);
+    class BufferMusicTask;
+    class StreamMusicTask;
 
 public:
 
-    MusicPlayer();
+    typedef enum {
+        STOPPED = 0,
+        PLAYING,
+        PAUSED
+    } PlayerState;
+
+    static MusicPlayer& sharedInstance();
+
     virtual ~MusicPlayer();
 
-    DecodeTask* getDecodeTask() const;
+    SongInfo* songAt(uint32_t idx) { return &mSongList.at(idx); }
 
-    void play(char *songName);
+    PlayerState state();
+
+    void queue(SongInfo *song);
+    void queue(SongInfo *song, uint32_t index);
     void pause();
+    void resume();
 
+    void playPrevious();
+    void playNext();
+
+    /// Increment the music player volume by 5%.
     void incrementVolume();
+    /// Decrement the music player volume by 5%.
     void decrementVolume();
-};
-
-class DecodeTask: public scheduler_task {
 
 protected:
 
+    typedef enum {
+        PREVIOUS_TRACK = 0,
+        NEXT_TRACK,
+    } QueueOption;
+
+    static MusicPlayer *instance;
+
+    std::vector<SongInfo> mSongList;
+
     VS1053B &mDecoder = VS1053B::sharedInstance();
-    QueueHandle_t *mQueue;
+
+    BufferMusicTask *bufferTask;
+
+    QueueHandle_t mStreamQueue;
+    QueueHandle_t mSongQueue;
+
+    SemaphoreHandle_t mPlayMutex;
+
+    /// Semaphore to puase or resume playback.
+    //SemaphoreHandle_t mPlaySema;
+
+    /// Current state of music player.
+    PlayerState mState;
+
+    /// Volume percentage, ranges from 0 to 100.
+    uint8_t mVolume;
+
+    uint32_t mSongIndex;
+
+    MusicPlayer();
+
+    void fetchSongs();
+
+    void updateBuffer();
+
+    /**
+     * Set the volume of the decoder.
+     *
+     * @param percentage Ranges from 0 to 100%.
+     */
+    inline void setVolume(uint8_t percentage);
+
+    // UITableViewDataSource
+
+    virtual inline uint32_t numberOfItems() const final;
+    virtual inline void cellForIndex(UITableViewCell &cell, uint32_t index) final;
+
+};
+
+/**
+ * Task to read and buffer data of a song from the SD Card and then queue the data to be ready for decoding.
+ */
+class MusicPlayer::BufferMusicTask final: public scheduler_task {
+
+protected:
+    QueueHandle_t mSongQueue;
+    QueueHandle_t mStreamQueue;
 
 public:
-    DecodeTask(uint8_t priority) : scheduler_task("buffer_song", 2000, priority), mQueue(NULL) { };
 
-    void setQueue(QueueHandle_t *queue) { mQueue = queue;     };
+    MusicPlayer *player;
+    bool newSongSelected;
 
-    bool run(void *) {
-        uint8_t *data = NULL;
-        while(xQueueReceive(mQueue, data, portMAX_DELAY)) {
-            if (mDecoder.isPlaybackEnabled()) {
-                mDecoder.buffer(data, VS1053B_BUFFER_SIZE);
-            }
-        }
-        return true;
-    };
+    BufferMusicTask(uint8_t priority, QueueHandle_t songQueue, QueueHandle_t streamQueue) : scheduler_task("buffer_song", 1024 * 3, priority), mSongQueue(songQueue), mStreamQueue(streamQueue) { };
+    bool run(void *);
+};
+
+/**
+ * Task to dequeue buffered data from BufferMusicTask for decoding.
+ */
+class MusicPlayer::StreamMusicTask final: public scheduler_task {
+
+protected:
+    QueueHandle_t mStreamQueue;
+
+public:
+    StreamMusicTask(uint8_t priority, QueueHandle_t queue) : scheduler_task("stream_song", 1024 * 2, priority), mStreamQueue(queue) { };
+    bool run(void *);
 };
 
 #endif /* MUSICPLAYER_H_ */

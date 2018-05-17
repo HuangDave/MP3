@@ -8,7 +8,7 @@
 #include "LabGPIO.hpp"
 
 /// Constructor
-LabGPIO::LabGPIO(uint8_t port, uint8_t pin) : mPort(port), mPin(pin) {
+LabGPIO::LabGPIO(uint8_t port, uint8_t pin, bool output, bool high) : mPort(port), mPin(pin) {
     // base pointers of ports mapped in memory
     LPC_GPIO_TypeDef *basePorts[] = { LPC_GPIO0, LPC_GPIO1, LPC_GPIO2, LPC_GPIO3, LPC_GPIO4 };
     // store reference to base pointer of the specified port
@@ -17,6 +17,9 @@ LabGPIO::LabGPIO(uint8_t port, uint8_t pin) : mPort(port), mPin(pin) {
     // set pin function to be GPIO
     volatile uint32_t *pinsel = &(LPC_PINCON->PINSEL0);
     pinsel[2*mPort] &= ~(3 << (2*mPin));
+
+    setDirection(output);
+    output ? set(high) : set(false);
 }
 
 /// Destructor
