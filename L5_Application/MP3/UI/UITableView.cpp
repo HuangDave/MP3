@@ -90,13 +90,14 @@ void UITableView::moveCursor(CursorDirection direction) {
     const uint32_t prevPos = mCursorPos;
 
     switch (direction) {
+        
         case DIRECTION_UP: {
             // clamp cursor to top
             if (mCursorPos != 0) { // cursor is not already at the top
                 mCursorPos--;
                 unhighlightCellAt(prevPos);
                 highlightCellAt(mCursorPos);
-                //update();
+
             } else {
                 if( mIndexStart == 0) return;   // reached the top
                 mIndexStart--;
@@ -104,6 +105,7 @@ void UITableView::moveCursor(CursorDirection direction) {
                 reDraw();
             }
         } break;
+
         case DIRECTION_DOWN: {
             if (mCursorPos == mItemCount - 1) return;
 
@@ -112,7 +114,7 @@ void UITableView::moveCursor(CursorDirection direction) {
                 mCursorPos++;
                 unhighlightCellAt(prevPos);
                 highlightCellAt(mCursorPos);
-                //update();
+
             } else {
                 if (mIndexEnd == mItemCount - 1) return; // reached the end
                 mIndexStart++;

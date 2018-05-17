@@ -14,7 +14,7 @@
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-#include <MP3/UI/SongMenu.hpp>
+#include <MP3/UI/UITableView.hpp>
 
 class NowPlayingView;
 
@@ -22,7 +22,7 @@ class UserInterface: public scheduler_task, protected virtual UITableViewDelegat
 
 protected:
 
-    SongMenu *mpSongMenu;
+    UITableView *mpSongMenu;
     NowPlayingView *mpNowPlaying;
 
     std::vector<UIView *> mpSubviews;

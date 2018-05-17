@@ -16,6 +16,8 @@
 #include "queue.h"
 #include "scheduler_task.hpp"
 
+#include <MP3/UI/UITableView.hpp>
+
 typedef struct {
     /// Full file path to song.
     char *path;
@@ -25,7 +27,7 @@ typedef struct {
     uint32_t fileSize;
 } SongInfo;
 
-class MusicPlayer {
+class MusicPlayer: protected virtual UITableViewDataSource {
 
 private:
 
@@ -40,10 +42,15 @@ protected:
         PAUSED
     } PlayerState;
 
+    typedef enum {
+        PREVIOUS_TRACK = 0,
+        CURRENT_TRACK,
+        NEXT_TRACK,
+    } QueueOption;
+
     static MusicPlayer *instance;
 
-    static std::vector<SongInfo> mSongList;
-    static uint32_t mSongCount;
+    std::vector<SongInfo> mSongList;
 
     VS1053B &mDecoder = VS1053B::sharedInstance();
 
@@ -53,16 +60,14 @@ protected:
     QueueHandle_t mSongQueue;
 
     /// Semaphore to puase or resume playback.
-    SemaphoreHandle_t mPlaySema;
-
-    char *mpCurrentSongName;
-
-    bool newSong;
+    //SemaphoreHandle_t mPlaySema;
 
     /// Volume percentage, ranges from 0 to 100.
     uint8_t mVolume;
 
     MusicPlayer();
+
+    void fetchSongs();
 
     /**
      * Set the volume of the decoder.
@@ -71,11 +76,18 @@ protected:
      */
     inline void setVolume(uint8_t percentage);
 
+    // UITableViewDataSource
+
+    virtual inline uint32_t numberOfItems() const final;
+    virtual inline void cellForIndex(UITableViewCell &cell, uint32_t index) final;
+
 public:
 
     static MusicPlayer& sharedInstance();
 
     virtual ~MusicPlayer();
+
+    SongInfo* songAt(uint32_t idx) { return &mSongList.at(idx); }
 
     void queue(SongInfo *song);
     void pause();
@@ -101,7 +113,6 @@ protected:
     QueueHandle_t mStreamQueue;
 
 public:
-
 
     bool newSongSelected;
 

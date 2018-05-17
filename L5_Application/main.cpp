@@ -31,21 +31,7 @@
 #include "ff.h"
 
 int main(void) {
-
-/*
-    FILE *f = fopen("1:rain_320.mp3", "r"); // read current song in SD Card
-
-    if   (f == NULL) printf("unable to open file.\n");
-    else             printf("successfully opened file.\n");
-
-    if (fseek(f, 0, SEEK_END) != 0) printf("fseek end error\n");
-    long fileSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    printf("file size: %ld\n", fileSize);
-    fclose(f);
-
-    while(1);
-*/
+    
     MusicPlayer::sharedInstance();
 
     UserInterface *ui = new UserInterface(PRIORITY_HIGH);
