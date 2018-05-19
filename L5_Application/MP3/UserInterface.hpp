@@ -17,15 +17,17 @@
 #include <MP3/UI/UITableView.hpp>
 
 class NowPlayingView;
+class LabGPIO;
 
 class UserInterface: public scheduler_task, protected virtual UITableViewDelegate {
 
 protected:
 
+    std::vector<UIView *> mSubviews;
+    LabGPIO *mpButtons;
+
     UITableView *mpSongMenu;
     NowPlayingView *mpNowPlaying;
-
-    std::vector<UIView *> mpSubviews;
 
     // UITableViewDelegate
 

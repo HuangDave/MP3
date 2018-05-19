@@ -20,4 +20,3 @@ void UIView::setBackgroundColor(Color c)        { mBackgroundColor = c; }
 
 void UIView::reDraw()                           { reDrawWithBackground(NULL); }
 void UIView::reDrawWithBackground(Color *color) { LCDDisplay.fillRect(mFrame, color == NULL ? mBackgroundColor : *color); }
-

@@ -139,16 +139,13 @@ UITableViewCell::UITableViewCell(Frame frame) : UIView(frame) {
 
 void UITableViewCell::init() {
     mpText = NULL;
-    mTextLen = 0;
 
     mHighlighted = false;
     mHighlightedColor = BLACK_COLOR;
 }
 
-void UITableViewCell::setText(char *text, uint32_t len) {
+void UITableViewCell::setText(char *text) {
     mpText = text;
-    mTextLen = len;
-
     reDraw();
 }
 

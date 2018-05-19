@@ -9,20 +9,38 @@
 #define NOWPLAYINGVIEW_HPP_
 
 #include <MP3/UI/UIView.hpp>
+#include <MP3/MusicPlayer.hpp>
 
-class NowPlayingView: public UIView {
+class NowPlayingView: public UIView, protected virtual MusicPlayerDelegate {
 
 protected:
 
     char *mpSongName;
+
+    MusicPlayer::PlayerState mState;
+
+    // MusicPlayerDelegate
+    
+    virtual void willStartPlaying(SongInfo *song) final;
+    virtual void willPause() final;
+    virtual void willResume() final;
+    virtual void willStop() final;
 
 public:
 
     NowPlayingView(Frame frame);
     virtual ~NowPlayingView();
 
+    /**
+     * Updates the view to display the name of the current song.
+     *
+     * @param name Name of song to display.
+     */
     void setSongName(char* const name);
 
+    /**
+     * Redraw the view.
+     */
     virtual void reDraw() override;
 };
 

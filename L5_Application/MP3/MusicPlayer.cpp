@@ -12,6 +12,8 @@
 #include "ff.h"
 #include "storage.hpp"
 
+//#include <taglib/tag.h>
+
 #define STREAM_QUEUE_SIZE        (3)
 #define STREAM_QUEUE_BUFFER_SIZE (1024)
 
@@ -25,8 +27,8 @@ MusicPlayer& MusicPlayer::sharedInstance() {
 }
 
 MusicPlayer::MusicPlayer() {
-    mStreamQueue = xQueueCreate(STREAM_QUEUE_SIZE, sizeof(uint8_t) * STREAM_QUEUE_BUFFER_SIZE);
-    mSongQueue   = xQueueCreate(SONG_QUEUE_SIZE,   sizeof(SongInfo));
+    mpDelegate = NULL;
+
     mPlayMutex   = xSemaphoreCreateMutex();
     //mPlaySema    = xSemaphoreCreateBinary();
 
@@ -40,13 +42,23 @@ MusicPlayer::MusicPlayer() {
 
     mSongIndex = 0;
 
-    bufferTask = new BufferMusicTask(PRIORITY_LOW, mSongQueue, mStreamQueue);
+    // init buffer and streaming tasks...
+    QueueHandle_t streamQueue = xQueueCreate(STREAM_QUEUE_SIZE, sizeof(uint8_t) * STREAM_QUEUE_BUFFER_SIZE);
+    mSongQueue   = xQueueCreate(SONG_QUEUE_SIZE,   sizeof(SongInfo));
+
+    bufferTask = new BufferMusicTask(PRIORITY_LOW, mSongQueue, streamQueue);
     bufferTask->player = this;
     scheduler_add_task(bufferTask);
-    scheduler_add_task(new StreamMusicTask(PRIORITY_LOW, mStreamQueue));
+    scheduler_add_task(new StreamMusicTask(PRIORITY_LOW, streamQueue));
 }
 
-MusicPlayer::~MusicPlayer() { }
+MusicPlayer::~MusicPlayer() {
+    mpDelegate = NULL;
+}
+
+void MusicPlayer::setDelegate(MusicPlayerDelegate *delegate) {
+    mpDelegate = delegate;
+}
 
 void MusicPlayer::fetchSongs() {
     mSongList.empty();
@@ -121,18 +133,21 @@ void MusicPlayer::queue(SongInfo *song, uint32_t index) {
 
         bufferTask->newSongSelected = true;
         xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
+        mpDelegate->willStartPlaying(song);
         xQueueSend(mSongQueue, &song, portMAX_DELAY);
     }
 }
 
 void MusicPlayer::pause() {
-    mDecoder.disablePlayback();
+    //mDecoder.disablePlayback();
+    mpDelegate->willPause();
     mState = PAUSED;
 }
 
 void MusicPlayer::resume() {
     mDecoder.resumePlayback();
     //xSemaphoreGive(mPlaySema);
+    mpDelegate->willResume();
     mState = PLAYING;
 }
 
@@ -183,7 +198,7 @@ inline uint32_t MusicPlayer::numberOfItems() const {
 
 inline void MusicPlayer::cellForIndex(UITableViewCell &cell, uint32_t index) {
     SongInfo info = mSongList.at(index);
-    cell.setText(info.name, strlen(info.name));
+    cell.setText(info.name);
 }
 
 // BufferMusicTask Implementation

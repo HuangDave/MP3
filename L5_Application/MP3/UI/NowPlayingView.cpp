@@ -9,9 +9,6 @@
 #include <string.h>
 #include <MP3/Drivers/ST7735.hpp>
 
-// TODO: remove printf
-#include <stdio.h>
-
 const uint16_t playIcon[] = {
     0b0111111111111111,
     0b0011111111111110,
@@ -23,7 +20,7 @@ const uint16_t playIcon[] = {
     0b0000000010000000
 };
 
-const uint16_t pauseIcon[] = {
+const uint16_t pausedIcon[] = {
     0b0000111000111000,
     0b0000111000111000,
     0b0000111000111000,
@@ -46,6 +43,7 @@ const uint16_t stopIcon[] = {
 };
 
 NowPlayingView::NowPlayingView(Frame frame) : UIView(frame) {
+    mState = MusicPlayer::STOPPED;
     mpSongName = NULL;
 }
 
@@ -61,30 +59,61 @@ void NowPlayingView::setSongName(char* const name) {
 void NowPlayingView::reDraw() {
     UIView::reDraw();
 
-    // TODO: fix eyeballed values
+    // Frame for drawing play, pause, or stop icon...
+    Frame iconFrame = Frame { mFrame.x + 5, mFrame.y + 6, 8, 16 };
 
-    Frame playIconFrame = Frame { mFrame.x + 5, mFrame.y + 6, 8, 16 };
-    LCDDisplay.drawBitmap(playIconFrame, playIcon, BLACK_COLOR, mBackgroundColor);
+    switch (mState) {
+        case MusicPlayer::STOPPED: {
+            LCDDisplay.drawBitmap(iconFrame, stopIcon, BLACK_COLOR, mBackgroundColor);
+        } break;
 
-    uint8_t len = strlen(mpSongName);
-    if (len > 20) len = 20;
+        case MusicPlayer::PLAYING: {
+            LCDDisplay.drawBitmap(iconFrame, playIcon, BLACK_COLOR, mBackgroundColor);
 
-    char str[len];
-    strncpy(str, mpSongName, len);
-    for (uint8_t i = len - 3; i < len; i++)
-        str[i] = '.';
+            uint8_t len = strlen(mpSongName);
+            if (len > 20) len = 20;
 
-    // TODO: move to UILabel Class
-    for (uint8_t i = 0; i < len; i++) {
-        const uint8_t padding = mFrame.x + 20;
-        const uint8_t charSpacing = (i * 1);
-        const uint8_t charPos = (i * 5);
+            char str[len];
+            strncpy(str, mpSongName, len);
+            for (uint8_t i = len - 3; i < len; i++)
+                str[i] = '.';
 
-        const uint8_t x = padding + charSpacing + charPos;
-        const uint8_t y = mFrame.y + 10;
+            // TODO: move to UILabel Class
+            for (uint8_t i = 0; i < len; i++) {
+                const uint8_t padding = mFrame.x + 20;
+                const uint8_t charSpacing = (i * 1);
+                const uint8_t charPos = (i * 5);
 
-        const uint8_t *bitmap = Font[int(mpSongName[i])];
+                const uint8_t x = padding + charSpacing + charPos;
+                const uint8_t y = mFrame.y + 10;
 
-        LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
+                const uint8_t *bitmap = Font[int(mpSongName[i])];
+
+                LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
+            }
+        } break;
+
+        case MusicPlayer::PAUSED: {
+            LCDDisplay.drawBitmap(iconFrame, pausedIcon, BLACK_COLOR, mBackgroundColor);
+        } break;
     }
+}
+
+// MusicPlayerDelegate Implementation
+
+void NowPlayingView::willStartPlaying(SongInfo *song) {
+    mState = MusicPlayer::PLAYING;
+    setSongName(song->name);
+}
+
+void NowPlayingView::willPause() {
+    mState = MusicPlayer::PAUSED;
+}
+
+void NowPlayingView::willResume() {
+    mState = MusicPlayer::PLAYING;
+}
+
+void NowPlayingView::willStop() {
+    mState = MusicPlayer::STOPPED;
 }

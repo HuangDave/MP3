@@ -41,6 +41,19 @@ public:
     virtual inline void didSelectCellAt(UITableViewCell &cell, uint32_t index) = 0;
 };
 
+/**
+ * The UITableView class is a subclass of UIView.
+ *
+ * The table view is populated by the UITableViewDataSource.
+ * Each row is displayed to the user through the UITableViewCell.
+ *
+ * The cursor of the table view is initially at index zero.
+ * The position of the cursor can be navigated through the moveCursor() function.
+ * The row for which the cursor is set to highlighted to indicate the cursor position to the user.
+ *
+ * When a cell (row) receives a user input, the UITableViewDelegate is
+ * notified to perform any tasks based on the selected row.
+ */
 class UITableView: public UIView {
 
 public:
@@ -72,7 +85,7 @@ public:
 
     /**
      * Set the minimum row height of each row.
-     * 
+     *
      * @param height Row height.
      */
     void setRowHeight(uint8_t height);
@@ -110,7 +123,9 @@ protected:
 
     UITableViewCell& cellForRow(uint8_t row);
 
+    /// Called when the cursor position is moved to highlight the row the cursor is currently on.
     inline void highlightCellAt(uint8_t row);
+    /// Called when the cursor is moved away to unhighlight the row.
     inline void unhighlightCellAt(uint8_t row);
 
     void reDraw(uint8_t row);
@@ -120,12 +135,10 @@ class UITableViewCell: public UIView {
 
 protected:
 
+    ///
     char *mpText;
-    uint32_t mTextLen;
-
     /// True if the cells is currently highlighted.
     bool mHighlighted;
-
     /// Background color of highlighted cell.
     Color mHighlightedColor;
 
@@ -137,7 +150,7 @@ public:
     UITableViewCell();
     UITableViewCell(Frame frame);
 
-    void setText(char *text, uint32_t len);
+    void setText(char *text);
     char* getText() const { return mpText; };
 
     void setHighlighted(bool highlighted);
