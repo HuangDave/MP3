@@ -31,15 +31,14 @@
 #include "ff.h"
 
 int main(void) {
-    
+
     MusicPlayer::sharedInstance();
 
     UserInterface *ui = new UserInterface(PRIORITY_HIGH);
 
-    scheduler_add_task(new terminalTask(PRIORITY_HIGH));
+    //scheduler_add_task(new terminalTask(PRIORITY_HIGH));
     scheduler_add_task(ui);
     scheduler_start();
-
 
     return 0;
 }

@@ -20,7 +20,7 @@ class UIView {
 
 public:
 
-    UIView(Frame frame) : mFrame(frame), mBackgroundColor(WHITE_COLOR) { };
+    UIView(Frame frame);
     virtual ~UIView();
 
     void setFrame(Frame frame);
@@ -35,6 +35,8 @@ protected:
 
     Frame mFrame;
     Color mBackgroundColor;
+
+    bool mIsDirty;
 };
 
 #endif /* UIVIEW_HPP_ */

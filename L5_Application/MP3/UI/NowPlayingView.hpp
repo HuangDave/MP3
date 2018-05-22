@@ -19,8 +19,6 @@ protected:
 
     MusicPlayer::PlayerState mState;
 
-    bool mIsDirty;
-
     // MusicPlayerDelegate
 
     virtual void willStartPlaying(SongInfo *song) final;

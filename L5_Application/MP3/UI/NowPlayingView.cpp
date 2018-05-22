@@ -45,7 +45,6 @@ const uint16_t stopIcon[] = {
 NowPlayingView::NowPlayingView(Frame frame) : UIView(frame) {
     mState = MusicPlayer::STOPPED;
     mpSongName = NULL;
-    mIsDirty = true;
 }
 
 NowPlayingView::~NowPlayingView() {

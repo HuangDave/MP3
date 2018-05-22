@@ -12,6 +12,8 @@
 #include "ff.h"
 #include "storage.hpp"
 
+#include "MP3/MP3File.hpp"
+
 #define STREAM_QUEUE_SIZE        (3)
 #define STREAM_QUEUE_BUFFER_SIZE (1024)
 
@@ -110,6 +112,10 @@ void MusicPlayer::fetchSongs() {
                 song.fileSize = fileInfo.fsize;
 
                 mSongList.push_back(song);
+
+                MP3File file = MP3File(path, fileInfo.fsize);
+                file.fetch();
+                mTrackList.push_back(file);
             }
         }
         f_closedir(&directory);

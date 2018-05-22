@@ -19,6 +19,8 @@
 
 #include <MP3/UI/UITableView.hpp>
 
+class MP3File;
+
 /**
  * SongInfo
  *
@@ -67,7 +69,6 @@ private:
 
     class BufferMusicTask;
     class StreamMusicTask;
-    class FetchMusicTask;
 
 public:
 
@@ -132,6 +133,7 @@ protected:
     static MusicPlayer *instance;
 
     std::vector<SongInfo> mSongList;
+    std::vector<MP3File> mTrackList;
 
     VS1053B &mDecoder = VS1053B::sharedInstance();
 
@@ -178,14 +180,6 @@ protected:
 
     virtual inline void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
 
-};
-
-class MusicPlayer::FetchMusicTask final: public scheduler_task {
-protected:
-
-public:
-    FetchMusicTask(uint8_t priority) : scheduler_task("fetch_music", 1024, priority) { };
-    bool run(void *);
 };
 
 /**
