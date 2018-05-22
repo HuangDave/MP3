@@ -1,43 +1,43 @@
 /*
- * UIView.cpp
+ * View.cpp
  *
  *  Created on: Apr 10, 2018
  *      Author: huang
  */
 
-#include "UIView.hpp"
+#include "View.hpp"
 
 #include <stddef.h>
 #include <MP3/Drivers/ST7735.hpp>
 
-UIView::UIView(Frame frame) {
+View::View(Frame frame) {
     mFrame = frame;
     mBackgroundColor = WHITE_COLOR;
     mIsDirty = true;
 }
 
-UIView::~UIView() { }
+View::~View() { }
 
-void UIView::setFrame(Frame frame) {
+void View::setFrame(Frame frame) {
     mFrame = frame;
 }
 
-void UIView::setOrigin(Point2D origin) {
+void View::setOrigin(Point2D origin) {
     mFrame.origin = origin;
 }
-void UIView::setSize(Size2D size) {
+void View::setSize(Size2D size) {
     mFrame.size = size;
 }
 
-void UIView::setBackgroundColor(Color c) {
+void View::setBackgroundColor(Color c) {
     mBackgroundColor = c;
 }
 
-void UIView::reDraw() {
+void View::reDraw() {
     reDrawWithBackground(NULL);
 }
 
-void UIView::reDrawWithBackground(Color *color) {
+void View::reDrawWithBackground(Color *color) {
     if (mIsDirty) {
         LCDDisplay.fillRect(mFrame, color == NULL ? mBackgroundColor : *color);
         mIsDirty = false;

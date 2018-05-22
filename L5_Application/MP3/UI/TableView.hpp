@@ -1,5 +1,5 @@
 /*
- * UITableView.hpp
+ * TableView.hpp
  *
  *  Created on: May 6, 2018
  *      Author: huang
@@ -8,11 +8,11 @@
 #ifndef UITABLEVIEW_HPP_
 #define UITABLEVIEW_HPP_
 
-#include "UIView.hpp"
+#include "View.hpp"
 
-class UITableViewCell;
+class TableViewCell;
 
-class UITableViewDataSource {
+class TableViewDataSource {
 public:
 
     /**
@@ -26,35 +26,35 @@ public:
      * @param cell  Cell to edit.
      * @param index Index of the item that is displayed by the cell.
      */
-    virtual inline void cellForIndex(UITableViewCell &cell, uint32_t index) = 0;
+    virtual inline void cellForIndex(TableViewCell &cell, uint32_t index) = 0;
 };
 
-class UITableViewDelegate {
+class TableViewDelegate {
 public:
 
     /**
      * Called when a cell in the table view becomes selected.
      *
-     * @param cell  Dereferenced UITableViewCell that was selected.
+     * @param cell  Dereferenced TableViewCell that was selected.
      * @param index Index of the cell that was selected.
      */
-    virtual inline void didSelectCellAt(UITableViewCell &cell, uint32_t index) = 0;
+    virtual inline void didSelectCellAt(TableViewCell &cell, uint32_t index) = 0;
 };
 
 /**
- * The UITableView class is a subclass of UIView.
+ * The TableView class is a subclass of View.
  *
- * The table view is populated by the UITableViewDataSource.
- * Each row is displayed to the user through the UITableViewCell.
+ * The table view is populated by the TableViewDataSource.
+ * Each row is displayed to the user through the TableViewCell.
  *
  * The cursor of the table view is initially at index zero.
  * The position of the cursor can be navigated through the moveCursor() function.
  * The row for which the cursor is set to highlighted to indicate the cursor position to the user.
  *
- * When a cell (row) receives a user input, the UITableViewDelegate is
+ * When a cell (row) receives a user input, the TableViewDelegate is
  * notified to perform any tasks based on the selected row.
  */
-class UITableView: public UIView {
+class TableView: public View {
 
 public:
 
@@ -63,11 +63,11 @@ public:
         DIRECTION_DOWN ,
     } CursorDirection;
 
-    UITableView(Frame frame);
-    virtual ~UITableView();
+    TableView(Frame frame);
+    virtual ~TableView();
 
-    void setDataSource(UITableViewDataSource* const dataSource);
-    void setDelegate(UITableViewDelegate* const delegate);
+    void setDataSource(TableViewDataSource* const dataSource);
+    void setDelegate(TableViewDelegate* const delegate);
 
     void reDraw() override;
 
@@ -99,11 +99,11 @@ public:
 
 protected:
 
-    UITableViewDataSource *mpDataSource;
-    UITableViewDelegate *mpDelegate;
+    TableViewDataSource *mpDataSource;
+    TableViewDelegate *mpDelegate;
 
     /// Array of all reusable cells.
-    UITableViewCell *mpCells;
+    TableViewCell *mpCells;
 
     /// Total number of reusable rows in table view.
     uint8_t mRows;
@@ -121,7 +121,7 @@ protected:
     uint8_t mIndexStart;
     uint8_t mIndexEnd;
 
-    UITableViewCell& cellForRow(uint8_t row);
+    TableViewCell& cellForRow(uint8_t row);
 
     /// Called when the cursor position is moved to highlight the row the cursor is currently on.
     inline void highlightCellAt(uint8_t row);
@@ -131,7 +131,7 @@ protected:
     void reDraw(uint8_t row);
 };
 
-class UITableViewCell: public UIView {
+class TableViewCell: public View {
 
 protected:
 
@@ -147,8 +147,8 @@ protected:
 
 public:
 
-    UITableViewCell();
-    UITableViewCell(Frame frame);
+    TableViewCell();
+    TableViewCell(Frame frame);
 
     void setText(char *text);
     char* getText() const { return mpText; };

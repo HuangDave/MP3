@@ -14,7 +14,7 @@
 #include <MP3/Drivers/ST7735.hpp>
 #include <MP3/MusicPlayer.hpp>
 #include <MP3/UI/NowPlayingView.hpp>
-#include <MP3/UI/UITableView.hpp>
+#include <MP3/UI/TableView.hpp>
 
 typedef enum {
     PLAY      = 0,
@@ -49,9 +49,9 @@ bool UserInterface::init() {
     const uint8_t kMenuRowHeight = 10;
     const uint8_t kNumRows       = 10;
 
-    mpSongMenu = new UITableView(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
-    mpSongMenu->setDelegate((UITableViewDelegate *) &player);
-    mpSongMenu->setDataSource((UITableViewDataSource *) &player);
+    mpSongMenu = new TableView(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
+    mpSongMenu->setDelegate((TableViewDelegate *) &player);
+    mpSongMenu->setDataSource((TableViewDataSource *) &player);
     mpSongMenu->setRowHeight(kMenuRowHeight);
     mpSongMenu->setNumberOfRows(kNumRows);
     addSubview(mpSongMenu);
@@ -108,8 +108,8 @@ bool UserInterface::run(void *) {
         else if (bPlayNext->getLevel()) { player.playNext();     vTaskDelay(500); }
 
         else if (bMenuSel->getLevel())  { mpSongMenu->selectCurrentRow(); }
-        else if (bMenuUp->getLevel())   { mpSongMenu->moveCursor(UITableView::DIRECTION_UP); }
-        else if (bMenuDown->getLevel()) { mpSongMenu->moveCursor(UITableView::DIRECTION_DOWN); }
+        else if (bMenuUp->getLevel())   { mpSongMenu->moveCursor(TableView::DIRECTION_UP); }
+        else if (bMenuDown->getLevel()) { mpSongMenu->moveCursor(TableView::DIRECTION_DOWN); }
 
         else if (bVolUp->getLevel())    { player.incrementVolume(); }
         else if (bVolDown->getLevel())  { player.decrementVolume(); }
@@ -122,12 +122,12 @@ bool UserInterface::run(void *) {
     return true;
 }
 
-void UserInterface::addSubview(UIView *view) {
+void UserInterface::addSubview(View *view) {
     mSubviews.push_back(view);
 }
 
 void UserInterface::updateViews() {
-    for (UIView *view : mSubviews) {
+    for (View *view : mSubviews) {
         view->reDraw();
     }
 }

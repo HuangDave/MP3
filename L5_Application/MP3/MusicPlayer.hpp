@@ -17,7 +17,7 @@
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-#include <MP3/UI/UITableView.hpp>
+#include <MP3/UI/TableView.hpp>
 
 class MP3File;
 
@@ -61,9 +61,9 @@ public:
  * When the state of the player is changed, the MusicPlayerDelegate (NowPlayingView) is notified of the change in state to update
  * the view and display relevant information to the user.
  *
- * Additionally, the MusicPlayer also conforms and implments UITableViewDataSource and UITableViewDelegate to populate the song menu.
+ * Additionally, the MusicPlayer also conforms and implments TableViewDataSource and TableViewDelegate to populate the song menu.
  */
-class MusicPlayer: protected virtual UITableViewDataSource, UITableViewDelegate {
+class MusicPlayer: protected virtual TableViewDataSource, TableViewDelegate {
 
 private:
 
@@ -170,15 +170,15 @@ protected:
      */
     inline void setVolume(uint8_t percentage);
 
-    // UITableViewDataSource & UITableViewDelegate
+    // TableViewDataSource & TableViewDelegate
 
     /// Returns the number of songs in mSongList.
     virtual inline uint32_t numberOfItems() const final;
 
     /// Updates a table view cell with song info based on the index.
-    virtual inline void cellForIndex(UITableViewCell &cell, uint32_t index) final;
+    virtual inline void cellForIndex(TableViewCell &cell, uint32_t index) final;
 
-    virtual inline void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
+    virtual inline void didSelectCellAt(TableViewCell &cell, uint32_t index) final;
 
 };
 

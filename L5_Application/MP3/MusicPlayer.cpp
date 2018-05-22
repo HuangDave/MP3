@@ -139,7 +139,6 @@ void MusicPlayer::queue(SongInfo *song, uint32_t index) {
         //char data[id3Size];
         //Storage::read(path, data, id3Size, song->fileSize - id3Size);
 
-
         bufferTask->newSongSelected = true;
         xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
         mpDelegate->willStartPlaying(song);
@@ -199,18 +198,18 @@ inline void MusicPlayer::setVolume(uint8_t percentage) {
     mDecoder.setVolume( (mVolume/100.0) * VS1053B_MAX_VOL );
 }
 
-// UITableViewDataSource & UITableViewDelegate Implementation
+// TableViewDataSource & TableViewDelegate Implementation
 
 inline uint32_t MusicPlayer::numberOfItems() const {
     return mSongList.size();
 }
 
-inline void MusicPlayer::cellForIndex(UITableViewCell &cell, uint32_t index) {
+inline void MusicPlayer::cellForIndex(TableViewCell &cell, uint32_t index) {
     SongInfo info = mSongList.at(index);
     cell.setText(info.name);
 }
 
-inline void MusicPlayer::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
+inline void MusicPlayer::didSelectCellAt(TableViewCell &cell, uint32_t index) {
     SongInfo *song = songAt(index);
     queue(song, index);              // queue song for playback
 }

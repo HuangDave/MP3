@@ -15,18 +15,18 @@
 #include "scheduler_task.hpp"
 
 class LabGPIO;
-class UIView;
+class View;
 class NowPlayingView;
-class UITableView;
+class TableView;
 
 class UserInterface: public scheduler_task {
 
 protected:
 
-    std::vector<UIView *> mSubviews;
+    std::vector<View *> mSubviews;
     LabGPIO *mpButtons;
 
-    UITableView *mpSongMenu;
+    TableView *mpSongMenu;
     NowPlayingView *mpNowPlaying;
 
 public:
@@ -37,7 +37,7 @@ public:
     bool init();
     bool run(void *);
 
-    void addSubview(UIView *view);
+    void addSubview(View *view);
     void updateViews();
 
 };

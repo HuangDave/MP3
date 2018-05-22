@@ -42,7 +42,7 @@ const uint16_t stopIcon[] = {
     0b0000111111111000
 };
 
-NowPlayingView::NowPlayingView(Frame frame) : UIView(frame) {
+NowPlayingView::NowPlayingView(Frame frame) : View(frame) {
     mState = MusicPlayer::STOPPED;
     mpSongName = NULL;
 }
@@ -58,7 +58,7 @@ void NowPlayingView::setSongName(char* const name) {
 }
 
 void NowPlayingView::reDraw() {
-    if (mIsDirty) UIView::reDraw();
+    if (mIsDirty) View::reDraw();
 
     // Frame for drawing play, pause, or stop icon...
     Frame iconFrame = Frame { mFrame.x + 5, mFrame.y + 6, 8, 16 };

@@ -8,10 +8,10 @@
 #ifndef NOWPLAYINGVIEW_HPP_
 #define NOWPLAYINGVIEW_HPP_
 
-#include <MP3/UI/UIView.hpp>
+#include <MP3/UI/View.hpp>
 #include <MP3/MusicPlayer.hpp>
 
-class NowPlayingView: public UIView, protected virtual MusicPlayerDelegate {
+class NowPlayingView: public View, protected virtual MusicPlayerDelegate {
 
 protected:
 
