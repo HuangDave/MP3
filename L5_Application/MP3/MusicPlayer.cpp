@@ -12,8 +12,6 @@
 #include "ff.h"
 #include "storage.hpp"
 
-//#include <taglib/tag.h>
-
 #define STREAM_QUEUE_SIZE        (3)
 #define STREAM_QUEUE_BUFFER_SIZE (1024)
 
@@ -131,6 +129,11 @@ void MusicPlayer::queue(SongInfo *song, uint32_t index) {
         xQueueReset(mSongQueue);
         mSongIndex = index;
 
+        //const uint8_t id3Size = 128;
+        //char data[id3Size];
+        //Storage::read(path, data, id3Size, song->fileSize - id3Size);
+
+
         bufferTask->newSongSelected = true;
         xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
         mpDelegate->willStartPlaying(song);
@@ -190,7 +193,7 @@ inline void MusicPlayer::setVolume(uint8_t percentage) {
     mDecoder.setVolume( (mVolume/100.0) * VS1053B_MAX_VOL );
 }
 
-// UITableViewDataSource Implementation
+// UITableViewDataSource & UITableViewDelegate Implementation
 
 inline uint32_t MusicPlayer::numberOfItems() const {
     return mSongList.size();
@@ -199,6 +202,11 @@ inline uint32_t MusicPlayer::numberOfItems() const {
 inline void MusicPlayer::cellForIndex(UITableViewCell &cell, uint32_t index) {
     SongInfo info = mSongList.at(index);
     cell.setText(info.name);
+}
+
+inline void MusicPlayer::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
+    SongInfo *song = songAt(index);
+    queue(song, index);              // queue song for playback
 }
 
 // BufferMusicTask Implementation

@@ -10,25 +10,25 @@
 #include <MP3/Drivers/ST7735.hpp>
 
 const uint16_t playIcon[] = {
-    0b0111111111111111,
-    0b0011111111111110,
+    0b0000000000000000,
     0b0001111111111100,
     0b0000111111111000,
     0b0000011111110000,
     0b0000001111100000,
     0b0000000111000000,
-    0b0000000010000000
+    0b0000000010000000,
+    0b0000000000000000
 };
 
 const uint16_t pausedIcon[] = {
-    0b0000111000111000,
-    0b0000111000111000,
-    0b0000111000111000,
-    0b0000111000111000,
-    0b0000111000111000,
-    0b0000111000111000,
-    0b0000111000111000,
-    0b0000111000111000
+    0b0000111111111000,
+    0b0000111111111000,
+    0b0000111111111000,
+    0b0000000000000000,
+    0b0000111111111000,
+    0b0000111111111000,
+    0b0000111111111000,
+    0b0000000000000000,
 };
 
 const uint16_t stopIcon[] = {
@@ -45,6 +45,7 @@ const uint16_t stopIcon[] = {
 NowPlayingView::NowPlayingView(Frame frame) : UIView(frame) {
     mState = MusicPlayer::STOPPED;
     mpSongName = NULL;
+    mIsDirty = true;
 }
 
 NowPlayingView::~NowPlayingView() {
@@ -53,11 +54,12 @@ NowPlayingView::~NowPlayingView() {
 
 void NowPlayingView::setSongName(char* const name) {
     mpSongName = name;
+    mIsDirty = true;
     reDraw();
 }
 
 void NowPlayingView::reDraw() {
-    UIView::reDraw();
+    if (mIsDirty) UIView::reDraw();
 
     // Frame for drawing play, pause, or stop icon...
     Frame iconFrame = Frame { mFrame.x + 5, mFrame.y + 6, 8, 16 };
@@ -97,6 +99,8 @@ void NowPlayingView::reDraw() {
             LCDDisplay.drawBitmap(iconFrame, pausedIcon, BLACK_COLOR, mBackgroundColor);
         } break;
     }
+
+    mIsDirty = false;
 }
 
 // MusicPlayerDelegate Implementation
@@ -108,12 +112,15 @@ void NowPlayingView::willStartPlaying(SongInfo *song) {
 
 void NowPlayingView::willPause() {
     mState = MusicPlayer::PAUSED;
+    reDraw();
 }
 
 void NowPlayingView::willResume() {
     mState = MusicPlayer::PLAYING;
+    reDraw();
 }
 
 void NowPlayingView::willStop() {
     mState = MusicPlayer::STOPPED;
+    reDraw();
 }

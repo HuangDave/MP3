@@ -14,6 +14,7 @@
 #include <MP3/Drivers/ST7735.hpp>
 #include <MP3/MusicPlayer.hpp>
 #include <MP3/UI/NowPlayingView.hpp>
+#include <MP3/UI/UITableView.hpp>
 
 typedef enum {
     PLAY      = 0,
@@ -49,7 +50,7 @@ bool UserInterface::init() {
     const uint8_t kNumRows       = 10;
 
     mpSongMenu = new UITableView(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
-    mpSongMenu->setDelegate((UITableViewDelegate *) this);
+    mpSongMenu->setDelegate((UITableViewDelegate *) &player);
     mpSongMenu->setDataSource((UITableViewDataSource *) &player);
     mpSongMenu->setRowHeight(kMenuRowHeight);
     mpSongMenu->setNumberOfRows(kNumRows);
@@ -102,7 +103,7 @@ bool UserInterface::run(void *) {
 
     while (1) {
 
-        if      (bPlay->getLevel())     { player.state() == MusicPlayer::PLAYING ? player.pause() : player.resume(); }
+        if      (bPlay->getLevel())     { player.state() == MusicPlayer::PLAYING ? player.pause() : player.resume(); vTaskDelay(500); }
         else if (bPlayPrev->getLevel()) { player.playPrevious(); vTaskDelay(500); }
         else if (bPlayNext->getLevel()) { player.playNext();     vTaskDelay(500); }
 
@@ -114,7 +115,7 @@ bool UserInterface::run(void *) {
         else if (bVolDown->getLevel())  { player.decrementVolume(); }
 
         //else if (buttons[BACK]->getLevel())      { mpSongMenu->selectCurrentRow(); }
-        
+
         vTaskDelay(50);
     }
 
@@ -129,18 +130,4 @@ void UserInterface::updateViews() {
     for (UIView *view : mSubviews) {
         view->reDraw();
     }
-}
-
-// UITableViewDelegate Implementation
-
-inline void UserInterface::didSelectCellAt(UITableViewCell &cell, uint32_t index) {
-
-    MusicPlayer &player = MusicPlayer::sharedInstance();
-    SongInfo *song = player.songAt(index);
-
-    // TODO: update NowPlayingView to display current song...
-    (*mpNowPlaying).setSongName(song->name);
-
-    // queue song for playback
-    player.queue(song, index);
 }

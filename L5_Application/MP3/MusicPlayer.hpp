@@ -55,18 +55,19 @@ public:
  *
  * The function queue(SongInfo *song, uint32_t index) is called queue a selected song for the BufferMusicTask
  * to start fetching data for the selected song.
- * 
+ *
  * When the state of the player is changed, the MusicPlayerDelegate (NowPlayingView) is notified of the change in state to update
  * the view and display relevant information to the user.
  *
  * Additionally, the MusicPlayer also conforms and implments UITableViewDataSource and UITableViewDelegate to populate the song menu.
  */
-class MusicPlayer: protected virtual UITableViewDataSource {
+class MusicPlayer: protected virtual UITableViewDataSource, UITableViewDelegate {
 
 private:
 
     class BufferMusicTask;
     class StreamMusicTask;
+    class FetchMusicTask;
 
 public:
 
@@ -167,7 +168,7 @@ protected:
      */
     inline void setVolume(uint8_t percentage);
 
-    // UITableViewDataSource
+    // UITableViewDataSource & UITableViewDelegate
 
     /// Returns the number of songs in mSongList.
     virtual inline uint32_t numberOfItems() const final;
@@ -175,6 +176,16 @@ protected:
     /// Updates a table view cell with song info based on the index.
     virtual inline void cellForIndex(UITableViewCell &cell, uint32_t index) final;
 
+    virtual inline void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
+
+};
+
+class MusicPlayer::FetchMusicTask final: public scheduler_task {
+protected:
+
+public:
+    FetchMusicTask(uint8_t priority) : scheduler_task("fetch_music", 1024, priority) { };
+    bool run(void *);
 };
 
 /**

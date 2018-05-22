@@ -14,12 +14,12 @@
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-#include <MP3/UI/UITableView.hpp>
-
-class NowPlayingView;
 class LabGPIO;
+class UIView;
+class NowPlayingView;
+class UITableView;
 
-class UserInterface: public scheduler_task, protected virtual UITableViewDelegate {
+class UserInterface: public scheduler_task {
 
 protected:
 
@@ -28,10 +28,6 @@ protected:
 
     UITableView *mpSongMenu;
     NowPlayingView *mpNowPlaying;
-
-    // UITableViewDelegate
-
-    virtual inline void didSelectCellAt(UITableViewCell &cell, uint32_t index) final;
 
 public:
 
