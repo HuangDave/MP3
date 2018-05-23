@@ -96,7 +96,14 @@ void MusicPlayer::fetchSongs() {
                 strcat(path, fullName);
                 path[len-1] = '\0'; // set terminal char at the end of string
 
+                // parse and save song name without extension...
+                len = strlen(fullName) - strlen(mp3[0]) + 1;
+                char *name = new char[len];
+                strncpy(name, fullName, len);
+                name[len-1] = '\0'; // set terminal char at the end of string
+
                 MP3File file = MP3File(path, fileInfo.fsize);
+                file.setName(name);
                 file.fetch();
                 mSongList.push_back(file);
             }
@@ -126,7 +133,6 @@ void MusicPlayer::queue(MP3File *song, uint32_t index) {
 }
 
 void MusicPlayer::pause() {
-    //mDecoder.disablePlayback();
     mpDelegate->willPause();
     mState = PAUSED;
 }
@@ -209,6 +215,7 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
                 uint8_t data[bufferSize] = { 0 };
 
                 // if paused wait for player to be resumed to continue sending data...
+                // TODO: should use semaphore
                 while (player->state() == MusicPlayer::PAUSED) vTaskDelay(1);
 
                 // Terminate buffering if a new song is selected or player is completely stopped...

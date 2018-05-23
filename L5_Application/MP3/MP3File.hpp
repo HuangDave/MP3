@@ -38,6 +38,8 @@ public:
      */
     void fetch();
 
+    void setName(char *name);
+
     char* getPath();
     uint32_t getFileSize();
     char* getTitle();
