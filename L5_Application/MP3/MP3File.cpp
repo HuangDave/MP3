@@ -13,6 +13,10 @@
 #include "ff.h"
 #include "storage.hpp"
 
+/**
+ * Helper function to remove extra spaces from strings copied from ID3v1 tag.
+ * @param str
+ */
 inline void removeTrailingSpaces(char *str) {
     uint32_t idx = 0;
     uint32_t i = 0;
@@ -21,6 +25,19 @@ inline void removeTrailingSpaces(char *str) {
         i++;
     }
     str[idx+1] = '\0';
+}
+
+/**
+ * Helper function to copy a string read from a song's ID3v1 tag.
+ *
+ * @param dst
+ * @param src
+ * @param len
+ */
+inline void copyAndRemoveTailingSpaces(char *dst, const char *src, uint32_t len) {
+    strncpy(dst,  (char *)src, len);
+    dst[len] = '\0';
+    removeTrailingSpaces(dst);
 }
 
 MP3File::MP3File(char *path, uint32_t fileSize) {
@@ -43,10 +60,6 @@ void MP3File::fetch() {
 
         xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
 
-        for (uint8_t i = 0; i < 128; i++)
-            printf("%x", data[i]);
-        printf("\n");
-
         const uint8_t titleOffset    = 3;
         const uint8_t artistOffset   = 33;
         const uint8_t albumOffset    = 63;
@@ -54,27 +67,22 @@ void MP3File::fetch() {
         const uint8_t commentOffset  = 97;
         const uint8_t genreOffset    = 127;
 
-        strncpy(header,  (char *)data, 3);
-        header[3] = '\0';
-        removeTrailingSpaces(header);
-        strncpy(title,   (char *)data + titleOffset, 30);
-        title[30] = '\0';
-        removeTrailingSpaces(title);
-        strncpy(artist,  (char *)data + artistOffset, 30);
-        artist[30] = '\0';
-        removeTrailingSpaces(artist);
-        strncpy(album,   (char *)data + albumOffset, 30);
-        album[30] = '\0';
-        removeTrailingSpaces(album);
-        strncpy(comment, (char *)data + commentOffset, 30);
-        comment[30] = '\0';
-        removeTrailingSpaces(comment);
+        copyAndRemoveTailingSpaces(mHeader,  (char *)data, 3);
+        copyAndRemoveTailingSpaces(mTitle,   (char *)data + titleOffset, 30);
+        copyAndRemoveTailingSpaces(mArtist,  (char *)data + artistOffset, 30);
+        copyAndRemoveTailingSpaces(mAlbum,   (char *)data + albumOffset, 30);
+        copyAndRemoveTailingSpaces(mComment, (char *)data + commentOffset, 30);
 
-        year |= data[yearOffset]   << 24;
-        year |= data[yearOffset+1] << 16;
-        year |= data[yearOffset+2] << 8;
-        year |= data[yearOffset+3] << 0;
+        mYear |= data[yearOffset]   << 24;
+        mYear |= data[yearOffset+1] << 16;
+        mYear |= data[yearOffset+2] << 8;
+        mYear |= data[yearOffset+3] << 0;
 
-        genre = data[genreOffset];
+        mGenre = data[genreOffset];
     }
 }
+
+char *MP3File::getPath()        { return mpPath;    }
+uint32_t MP3File::getFileSize() { return mFileSize; }
+char* MP3File::getTitle()       { return mTitle;    }
+char* MP3File::getArtist()      { return mArtist;   }

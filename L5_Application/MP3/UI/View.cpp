@@ -10,6 +10,8 @@
 #include <stddef.h>
 #include <MP3/Drivers/ST7735.hpp>
 
+#include <stdio.h>
+
 View::View(Frame frame) {
     mFrame = frame;
     mBackgroundColor = WHITE_COLOR;
@@ -31,6 +33,11 @@ void View::setSize(Size2D size) {
 
 void View::setBackgroundColor(Color c) {
     mBackgroundColor = c;
+}
+
+void View::draw() {
+    mIsDirty = true;
+    reDraw();
 }
 
 void View::reDraw() {

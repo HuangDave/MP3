@@ -28,10 +28,7 @@ MusicPlayer& MusicPlayer::sharedInstance() {
 
 MusicPlayer::MusicPlayer() {
     mpDelegate = NULL;
-
     mPlayMutex   = xSemaphoreCreateMutex();
-    //mPlaySema    = xSemaphoreCreateBinary();
-
     mState = STOPPED;
 
     // set default volume to 80 on startup
@@ -44,7 +41,7 @@ MusicPlayer::MusicPlayer() {
 
     // init buffer and streaming tasks...
     QueueHandle_t streamQueue = xQueueCreate(STREAM_QUEUE_SIZE, sizeof(uint8_t) * STREAM_QUEUE_BUFFER_SIZE);
-    mSongQueue   = xQueueCreate(SONG_QUEUE_SIZE,   sizeof(SongInfo));
+    mSongQueue   = xQueueCreate(SONG_QUEUE_SIZE,   sizeof(MP3File));
 
     bufferTask = new BufferMusicTask(PRIORITY_LOW, mSongQueue, streamQueue);
     bufferTask->player = this;
@@ -90,8 +87,6 @@ void MusicPlayer::fetchSongs() {
 
             if (!(fileInfo.fattrib & AM_DIR) && (strcmp(ext, mp3[0]) || strcmp(ext, mp3[1]))) {
 
-                SongInfo song;
-
                 const char *fullName = fileInfo.lfname[0] == 0 ? fileInfo.fname : fileInfo.lfname;
 
                 // construct and save full file path by combining directory path and full file name...
@@ -100,22 +95,10 @@ void MusicPlayer::fetchSongs() {
                 strcpy(path, dirPath);
                 strcat(path, fullName);
                 path[len-1] = '\0'; // set terminal char at the end of string
-                song.path = path;
-
-                // parse and save song name without extension...
-                len = strlen(fullName) - strlen(mp3[0]) + 1;
-                char *name = new char[len];
-                strncpy(name, fullName, len);
-                name[len-1] = '\0'; // set terminal char at the end of string
-                song.name = name;
-
-                song.fileSize = fileInfo.fsize;
-
-                mSongList.push_back(song);
 
                 MP3File file = MP3File(path, fileInfo.fsize);
                 file.fetch();
-                mTrackList.push_back(file);
+                mSongList.push_back(file);
             }
         }
         f_closedir(&directory);
@@ -126,7 +109,7 @@ MusicPlayer::PlayerState MusicPlayer::state() {
     return mState;
 }
 
-void MusicPlayer::queue(SongInfo *song, uint32_t index) {
+void MusicPlayer::queue(MP3File *song, uint32_t index) {
     mDecoder.enablePlayback();
 
     mState = PLAYING;
@@ -134,10 +117,6 @@ void MusicPlayer::queue(SongInfo *song, uint32_t index) {
     if (xSemaphoreTake(SPI::spiMutex[SPI::SSP1], portMAX_DELAY)) {
         xQueueReset(mSongQueue);
         mSongIndex = index;
-
-        //const uint8_t id3Size = 128;
-        //char data[id3Size];
-        //Storage::read(path, data, id3Size, song->fileSize - id3Size);
 
         bufferTask->newSongSelected = true;
         xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
@@ -154,7 +133,6 @@ void MusicPlayer::pause() {
 
 void MusicPlayer::resume() {
     mDecoder.resumePlayback();
-    //xSemaphoreGive(mPlaySema);
     mpDelegate->willResume();
     mState = PLAYING;
 }
@@ -205,13 +183,11 @@ inline uint32_t MusicPlayer::numberOfItems() const {
 }
 
 inline void MusicPlayer::cellForIndex(TableViewCell &cell, uint32_t index) {
-    SongInfo info = mSongList.at(index);
-    cell.setText(info.name);
+    cell.setText(mSongList[index].getTitle());
 }
 
-inline void MusicPlayer::didSelectCellAt(TableViewCell &cell, uint32_t index) {
-    SongInfo *song = songAt(index);
-    queue(song, index);              // queue song for playback
+inline void MusicPlayer::tableViewDidSelectCellAt(const TableView *tableView, TableViewCell &cell, uint32_t index) {
+    queue(&mSongList[index], index);
 }
 
 // BufferMusicTask Implementation
@@ -221,11 +197,11 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
     const uint32_t bufferSize = STREAM_QUEUE_BUFFER_SIZE;
 
     while (1) {
-        SongInfo *song = NULL;
+        MP3File *song = NULL;
         if (xQueueReceive(mSongQueue, &song, portMAX_DELAY)) {
 
-            const uint32_t fileSize = song->fileSize;
-            const char *path = song->path;
+            const uint32_t fileSize = song->getFileSize();
+            const char *path = song->getPath();
 
             newSongSelected = false;
 
@@ -233,7 +209,6 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
                 uint8_t data[bufferSize] = { 0 };
 
                 // if paused wait for player to be resumed to continue sending data...
-                // TODO: should use semaphore
                 while (player->state() == MusicPlayer::PAUSED) vTaskDelay(1);
 
                 // Terminate buffering if a new song is selected or player is completely stopped...

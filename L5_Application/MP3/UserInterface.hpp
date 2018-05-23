@@ -14,10 +14,10 @@
 #include "queue.h"
 #include "scheduler_task.hpp"
 
+#include "MP3/UI/TableView.hpp"
+
 class LabGPIO;
-class View;
 class NowPlayingView;
-class TableView;
 
 class UserInterface: public scheduler_task {
 

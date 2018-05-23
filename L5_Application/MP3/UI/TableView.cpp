@@ -6,7 +6,6 @@
  */
 
 #include "TableView.hpp"
-#include <stdio.h>
 #include <string.h>
 #include "utilities.h"
 #include <MP3/Drivers/ST7735.hpp>
@@ -37,7 +36,7 @@ TableView::~TableView() {
 
 void TableView::updateTableIfNeeded() {
 
-    if ( (mpCells == NULL && mRows > 0) || mItemCount != (*mpDataSource).numberOfItems()) {
+    if (mIsDirty || (mpCells == NULL && mRows > 0) || mItemCount != (*mpDataSource).numberOfItems()) {
 
         mItemCount = (*mpDataSource).numberOfItems();
 
@@ -60,6 +59,8 @@ void TableView::reDraw() {
 
     updateTableIfNeeded();
 
+    View::reDraw();
+
     for (uint8_t row = 0; row < mRows; row++) {
         uint32_t index = mIndexStart + row;
         if (index >= mItemCount) break;
@@ -68,12 +69,12 @@ void TableView::reDraw() {
     }
 }
 
-void TableView::reDraw(uint8_t row)                                    { cellForRow(row).reDraw(); }
+void TableView::reDraw(uint8_t row)                                  { cellForRow(row).reDraw(); }
 void TableView::setDataSource(TableViewDataSource* const dataSource) { mpDataSource = dataSource; }
 void TableView::setDelegate(TableViewDelegate* const delegate)       { mpDelegate = delegate; }
-void TableView::setNumberOfRows(uint8_t rows)                          { mRows = rows; }
-void TableView::setRowHeight(uint8_t height)                           { mRowHeight = height; }
-void TableView::selectCurrentRow()                                     { (*mpDelegate).didSelectCellAt(cellForRow(mCursorPos), mIndexStart + mCursorPos); }
+void TableView::setNumberOfRows(uint8_t rows)                        { mRows = rows; }
+void TableView::setRowHeight(uint8_t height)                         { mRowHeight = height; }
+void TableView::selectCurrentRow()                                   { (*mpDelegate).tableViewDidSelectCellAt(this, cellForRow(mCursorPos), mIndexStart + mCursorPos); }
 TableViewCell& TableView::cellForRow(uint8_t row)                    { return mpCells[row]; }
 
 void TableView::highlightCellAt(uint8_t row) {
@@ -126,7 +127,7 @@ void TableView::moveCursor(CursorDirection direction) {
 }
 
 // ---------------------------------------------------------- //
-//                      TableViewCell                       //
+//                      TableViewCell                         //
 // ---------------------------------------------------------- //
 
 TableViewCell::TableViewCell() : View(Frame{0,0,0,0}) {
@@ -156,6 +157,10 @@ void TableViewCell::reDraw() {
     // use highlighted color if cell is highlighted
     //View::reDrawWithBackground( mHighlighted ? &mHighlightedColor : &mBackgroundColor );
 
+    if (!mIsDirty) return;
+
+    //View::reDraw();
+
     uint8_t selIcon[] = {
             0b11111110,
             0b01111100,
@@ -165,7 +170,9 @@ void TableViewCell::reDraw() {
 
     uint8_t unselIcon[] = { 0, 0, 0, 0 };
 
-    Frame selFrame = Frame { mFrame.x + 2, mFrame.y, 4, 8 };
+    const uint8_t kIconWidth = 4;
+    const uint8_t kIconHeight = 8;
+    Frame selFrame = Frame { mFrame.x + 2, mFrame.y, kIconWidth, kIconHeight };
 
     uint8_t len = strlen(mpText);
     char str[len];
@@ -198,7 +205,5 @@ void TableViewCell::reDraw() {
         //else                LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
 
         LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
-
-        //delay_ms(2);
     }
 }

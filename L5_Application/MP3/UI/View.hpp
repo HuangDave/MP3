@@ -5,8 +5,8 @@
  *      Author: huang
  */
 
-#ifndef UIVIEW_HPP_
-#define UIVIEW_HPP_
+#ifndef VIEW_HPP_
+#define VIEW_HPP_
 
 #include "../gfx.h"
 
@@ -28,7 +28,13 @@ public:
     void setSize(Size2D size);
     void setBackgroundColor(Color c);
 
+    /// Set the view as dirty and completely redraw the view.
+    virtual void draw();
+
+    /// Redraw the view and only update parts of the view that needs updating.
     virtual void reDraw();
+
+    /// Redraw the view with a different background color.
     virtual void reDrawWithBackground(Color *color);
 
 protected:
@@ -39,4 +45,4 @@ protected:
     bool mIsDirty;
 };
 
-#endif /* UIVIEW_HPP_ */
+#endif /* VIEW_HPP_ */

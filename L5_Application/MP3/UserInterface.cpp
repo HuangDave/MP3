@@ -14,10 +14,9 @@
 #include <MP3/Drivers/ST7735.hpp>
 #include <MP3/MusicPlayer.hpp>
 #include <MP3/UI/NowPlayingView.hpp>
-#include <MP3/UI/TableView.hpp>
 
 typedef enum {
-    PLAY      = 0,
+    PLAY = 0,
     PLAY_PREV,
     PLAY_NEXT,
     VOL_UP,
@@ -42,13 +41,11 @@ bool UserInterface::init() {
 
     MusicPlayer &player = MusicPlayer::sharedInstance();
 
-    // TODO: initialize main menu...
-
-    // Initialize song menu...
     const uint8_t kMenuHeight    = 100;
     const uint8_t kMenuRowHeight = 10;
     const uint8_t kNumRows       = 10;
 
+    // Initialize song menu...
     mpSongMenu = new TableView(Frame { 0, 0, SCREEN_WIDTH, kMenuHeight });
     mpSongMenu->setDelegate((TableViewDelegate *) &player);
     mpSongMenu->setDataSource((TableViewDataSource *) &player);
@@ -77,18 +74,17 @@ bool UserInterface::init() {
     mpButtons[MENU_UP]   = LabGPIO(1,  9); // TODO: need to remap should be 1, 20
     mpButtons[MENU_DOWN] = LabGPIO(1, 22);
      */
+
     return true;
 }
 
 bool UserInterface::run(void *) {
 
-    //vTaskDelay(10);
-
     updateViews();
 
     // TODO: remap GPIO buttons...
 
-    LabGPIO *bPlay     = new LabGPIO(1, 10); // (0, 29)
+    LabGPIO *bPlay     = new LabGPIO(0, 29);
     LabGPIO *bPlayPrev = new LabGPIO(1, 14);//(0, 30);
     LabGPIO *bPlayNext = new LabGPIO(1, 15);//(1, 19);
 
@@ -108,13 +104,13 @@ bool UserInterface::run(void *) {
         else if (bPlayNext->getLevel()) { player.playNext();     vTaskDelay(500); }
 
         else if (bMenuSel->getLevel())  { mpSongMenu->selectCurrentRow(); }
+
         else if (bMenuUp->getLevel())   { mpSongMenu->moveCursor(TableView::DIRECTION_UP); }
         else if (bMenuDown->getLevel()) { mpSongMenu->moveCursor(TableView::DIRECTION_DOWN); }
 
+
         else if (bVolUp->getLevel())    { player.incrementVolume(); }
         else if (bVolDown->getLevel())  { player.decrementVolume(); }
-
-        //else if (buttons[BACK]->getLevel())      { mpSongMenu->selectCurrentRow(); }
 
         vTaskDelay(50);
     }

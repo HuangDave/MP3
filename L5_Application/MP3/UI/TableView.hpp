@@ -5,11 +5,12 @@
  *      Author: huang
  */
 
-#ifndef UITABLEVIEW_HPP_
-#define UITABLEVIEW_HPP_
+#ifndef TABLEVIEW_HPP_
+#define TABLEVIEW_HPP_
 
 #include "View.hpp"
 
+class TableView;
 class TableViewCell;
 
 class TableViewDataSource {
@@ -38,7 +39,7 @@ public:
      * @param cell  Dereferenced TableViewCell that was selected.
      * @param index Index of the cell that was selected.
      */
-    virtual inline void didSelectCellAt(TableViewCell &cell, uint32_t index) = 0;
+    virtual inline void tableViewDidSelectCellAt(const TableView *tableView, TableViewCell &cell, uint32_t index) = 0;
 };
 
 /**
@@ -159,4 +160,4 @@ public:
     void reDraw() override;
 };
 
-#endif /* UITABLEVIEW_HPP_ */
+#endif /* TABLEVIEW_HPP_ */

@@ -18,24 +18,7 @@
 #include "scheduler_task.hpp"
 
 #include <MP3/UI/TableView.hpp>
-
-class MP3File;
-
-/**
- * SongInfo
- *
- * @param path      Full directory filepath of the song.
- * @param name      Formated name of the song (w/o directory prefix and .mp3 extension)
- * @param fileSize  Size in bytes of the mp3 file.
- */
-typedef struct {
-    /// Full file path to song.
-    char *path;
-    /// Formated file name w/o dir prefix and extension type.
-    char *name;
-    /// total size of file in bytes.
-    uint32_t fileSize;
-} SongInfo;
+#include "MP3/MP3File.hpp"
 
 /**
  * MusicPlayerDelegate
@@ -44,7 +27,7 @@ typedef struct {
  */
 class MusicPlayerDelegate {
 public:
-    virtual void willStartPlaying(SongInfo *song) = 0;
+    virtual void willStartPlaying(MP3File *mp3) = 0;
     virtual void willPause() = 0;
     virtual void willResume() = 0;
     virtual void willStop() = 0;
@@ -84,7 +67,7 @@ public:
 
     void setDelegate(MusicPlayerDelegate *delegate);
 
-    SongInfo* songAt(uint32_t idx) { return &mSongList.at(idx); }
+    MP3File* songAt(uint32_t idx) { return &mSongList.at(idx); }
 
     /// @return Returns the current state of the player.
     PlayerState state();
@@ -95,7 +78,7 @@ public:
      * @param song  Pointer to the SongInfo of the song to queue.
      * @param index Index of the song in mSongList.
      */
-    void queue(SongInfo *song, uint32_t index);
+    void queue(MP3File *song, uint32_t index);
 
     /// Pause the music player and also pause decoding of the current song. resume() is called to resume the player and decoding.
     void pause();
@@ -132,8 +115,7 @@ protected:
 
     static MusicPlayer *instance;
 
-    std::vector<SongInfo> mSongList;
-    std::vector<MP3File> mTrackList;
+    std::vector<MP3File> mSongList;
 
     VS1053B &mDecoder = VS1053B::sharedInstance();
 
@@ -178,7 +160,7 @@ protected:
     /// Updates a table view cell with song info based on the index.
     virtual inline void cellForIndex(TableViewCell &cell, uint32_t index) final;
 
-    virtual inline void didSelectCellAt(TableViewCell &cell, uint32_t index) final;
+    virtual inline void tableViewDidSelectCellAt(const TableView *tableView, TableViewCell &cell, uint32_t index) final;
 
 };
 
