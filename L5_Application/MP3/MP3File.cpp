@@ -86,5 +86,5 @@ void MP3File::setName(char *name) { mpName = name;    }
 
 char *MP3File::getPath()          { return mpPath;    }
 uint32_t MP3File::getFileSize()   { return mFileSize; }
-char* MP3File::getTitle()         { return strlen(mTitle == 0) || strlen(mTitle == 31) ? mpName : mTitle;    }
+char* MP3File::getTitle()         { return strlen(mTitle) == 0 || strlen(mTitle) == 31 ? mpName : mTitle;    }
 char* MP3File::getArtist()        { return mArtist;   }
