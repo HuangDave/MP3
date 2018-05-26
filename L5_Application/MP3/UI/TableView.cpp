@@ -1,21 +1,20 @@
 /*
- * UITableView.cpp
+ * TableView.cpp
  *
  *  Created on: May 6, 2018
  *      Author: huang
  */
 
-#include "UITableView.hpp"
-#include <stdio.h>
+#include "TableView.hpp"
 #include <string.h>
 #include "utilities.h"
 #include <MP3/Drivers/ST7735.hpp>
 
 // ---------------------------------------------------------- //
-//                        UITableView                         //
+//                        TableView                           //
 // ---------------------------------------------------------- //
 
-UITableView::UITableView(Frame frame) : UIView(frame) {
+TableView::TableView(Frame frame) : View(frame) {
     mpCells = NULL;
     mpDataSource = NULL;
     mpDelegate = NULL;
@@ -27,7 +26,7 @@ UITableView::UITableView(Frame frame) : UIView(frame) {
     mItemCount = 0;
 }
 
-UITableView::~UITableView() {
+TableView::~TableView() {
     mpDataSource = NULL;
     mpDelegate = NULL;
 
@@ -35,16 +34,16 @@ UITableView::~UITableView() {
     mpCells = NULL;
 }
 
-void UITableView::updateTableIfNeeded() {
+void TableView::updateTableIfNeeded() {
 
-    if ( (mpCells == NULL && mRows > 0) || mItemCount != (*mpDataSource).numberOfItems()) {
+    if (mIsDirty || (mpCells == NULL && mRows > 0) || mItemCount != (*mpDataSource).numberOfItems()) {
 
         mItemCount = (*mpDataSource).numberOfItems();
 
-        mpCells = new UITableViewCell[mRows];
+        mpCells = new TableViewCell[mRows];
         for (uint8_t i = 0; i < mRows; i++) {
             uint8_t y = i * mRowHeight + (!!i * 1);
-            mpCells[i] = UITableViewCell(Frame { 0, y, mFrame.width, mRowHeight });
+            mpCells[i] = TableViewCell(Frame { 0, y, mFrame.width, mRowHeight });
         }
 
         highlightCellAt(0); // highlight the first cell
@@ -56,9 +55,11 @@ void UITableView::updateTableIfNeeded() {
     }
 }
 
-void UITableView::reDraw() {
+void TableView::reDraw() {
 
     updateTableIfNeeded();
+
+    View::reDraw();
 
     for (uint8_t row = 0; row < mRows; row++) {
         uint32_t index = mIndexStart + row;
@@ -68,25 +69,25 @@ void UITableView::reDraw() {
     }
 }
 
-void UITableView::reDraw(uint8_t row)                                    { cellForRow(row).reDraw(); }
-void UITableView::setDataSource(UITableViewDataSource* const dataSource) { mpDataSource = dataSource; }
-void UITableView::setDelegate(UITableViewDelegate* const delegate)       { mpDelegate = delegate; }
-void UITableView::setNumberOfRows(uint8_t rows)                          { mRows = rows; }
-void UITableView::setRowHeight(uint8_t height)                           { mRowHeight = height; }
-void UITableView::selectCurrentRow()                                     { (*mpDelegate).didSelectCellAt(cellForRow(mCursorPos), mIndexStart + mCursorPos); }
-UITableViewCell& UITableView::cellForRow(uint8_t row)                    { return mpCells[row]; }
+void TableView::reDraw(uint8_t row)                                  { cellForRow(row).reDraw(); }
+void TableView::setDataSource(TableViewDataSource* const dataSource) { mpDataSource = dataSource; }
+void TableView::setDelegate(TableViewDelegate* const delegate)       { mpDelegate = delegate; }
+void TableView::setNumberOfRows(uint8_t rows)                        { mRows = rows; }
+void TableView::setRowHeight(uint8_t height)                         { mRowHeight = height; }
+void TableView::selectCurrentRow()                                   { (*mpDelegate).tableViewDidSelectCellAt(this, cellForRow(mCursorPos), mIndexStart + mCursorPos); }
+TableViewCell& TableView::cellForRow(uint8_t row)                    { return mpCells[row]; }
 
-void UITableView::highlightCellAt(uint8_t row) {
+void TableView::highlightCellAt(uint8_t row) {
     cellForRow(row).setHighlighted(true);
     reDraw(row);
 }
 
-void UITableView::unhighlightCellAt(uint8_t row) {
+void TableView::unhighlightCellAt(uint8_t row) {
     cellForRow(row).setHighlighted(false);
     reDraw(row);
 }
 
-void UITableView::moveCursor(CursorDirection direction) {
+void TableView::moveCursor(CursorDirection direction) {
     const uint32_t prevPos = mCursorPos;
 
     switch (direction) {
@@ -126,38 +127,39 @@ void UITableView::moveCursor(CursorDirection direction) {
 }
 
 // ---------------------------------------------------------- //
-//                      UITableViewCell                       //
+//                      TableViewCell                         //
 // ---------------------------------------------------------- //
 
-UITableViewCell::UITableViewCell() : UIView(Frame{0,0,0,0}) {
+TableViewCell::TableViewCell() : View(Frame{0,0,0,0}) {
     init();
 }
 
-UITableViewCell::UITableViewCell(Frame frame) : UIView(frame) {
+TableViewCell::TableViewCell(Frame frame) : View(frame) {
     init();
 }
 
-void UITableViewCell::init() {
+void TableViewCell::init() {
     mpText = NULL;
-    mTextLen = 0;
 
     mHighlighted = false;
     mHighlightedColor = BLACK_COLOR;
 }
 
-void UITableViewCell::setText(char *text, uint32_t len) {
+void TableViewCell::setText(char *text) {
     mpText = text;
-    mTextLen = len;
-
     reDraw();
 }
 
-void UITableViewCell::setHighlighted(bool highlighted) { mHighlighted = highlighted; }
-void UITableViewCell::setHighlightedColor(Color color) { mHighlightedColor = color;  }
+void TableViewCell::setHighlighted(bool highlighted) { mHighlighted = highlighted; }
+void TableViewCell::setHighlightedColor(Color color) { mHighlightedColor = color;  }
 
-void UITableViewCell::reDraw() {
+void TableViewCell::reDraw() {
     // use highlighted color if cell is highlighted
-    //UIView::reDrawWithBackground( mHighlighted ? &mHighlightedColor : &mBackgroundColor );
+    //View::reDrawWithBackground( mHighlighted ? &mHighlightedColor : &mBackgroundColor );
+
+    if (!mIsDirty) return;
+
+    //View::reDraw();
 
     uint8_t selIcon[] = {
             0b11111110,
@@ -168,7 +170,9 @@ void UITableViewCell::reDraw() {
 
     uint8_t unselIcon[] = { 0, 0, 0, 0 };
 
-    Frame selFrame = Frame { mFrame.x + 2, mFrame.y, 4, 8 };
+    const uint8_t kIconWidth = 4;
+    const uint8_t kIconHeight = 8;
+    Frame selFrame = Frame { mFrame.x + 2, mFrame.y, kIconWidth, kIconHeight };
 
     uint8_t len = strlen(mpText);
     char str[len];
@@ -201,7 +205,5 @@ void UITableViewCell::reDraw() {
         //else                LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
 
         LCDDisplay.drawFont(Point2D{x, y}, bitmap, BLACK_COLOR, mBackgroundColor);
-
-        //delay_ms(2);
     }
 }

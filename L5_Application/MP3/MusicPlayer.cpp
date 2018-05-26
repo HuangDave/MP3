@@ -12,6 +12,8 @@
 #include "ff.h"
 #include "storage.hpp"
 
+#include "MP3/MP3File.hpp"
+
 #define STREAM_QUEUE_SIZE        (3)
 #define STREAM_QUEUE_BUFFER_SIZE (1024)
 
@@ -25,11 +27,8 @@ MusicPlayer& MusicPlayer::sharedInstance() {
 }
 
 MusicPlayer::MusicPlayer() {
-    mStreamQueue = xQueueCreate(STREAM_QUEUE_SIZE, sizeof(uint8_t) * STREAM_QUEUE_BUFFER_SIZE);
-    mSongQueue   = xQueueCreate(SONG_QUEUE_SIZE,   sizeof(SongInfo));
+    mpDelegate = NULL;
     mPlayMutex   = xSemaphoreCreateMutex();
-    //mPlaySema    = xSemaphoreCreateBinary();
-
     mState = STOPPED;
 
     // set default volume to 80 on startup
@@ -40,13 +39,23 @@ MusicPlayer::MusicPlayer() {
 
     mSongIndex = 0;
 
-    bufferTask = new BufferMusicTask(PRIORITY_LOW, mSongQueue, mStreamQueue);
+    // init buffer and streaming tasks...
+    QueueHandle_t streamQueue = xQueueCreate(STREAM_QUEUE_SIZE, sizeof(uint8_t) * STREAM_QUEUE_BUFFER_SIZE);
+    mSongQueue   = xQueueCreate(SONG_QUEUE_SIZE,   sizeof(MP3File));
+
+    bufferTask = new BufferMusicTask(PRIORITY_LOW, mSongQueue, streamQueue);
     bufferTask->player = this;
     scheduler_add_task(bufferTask);
-    scheduler_add_task(new StreamMusicTask(PRIORITY_LOW, mStreamQueue));
+    scheduler_add_task(new StreamMusicTask(PRIORITY_LOW, streamQueue));
 }
 
-MusicPlayer::~MusicPlayer() { }
+MusicPlayer::~MusicPlayer() {
+    mpDelegate = NULL;
+}
+
+void MusicPlayer::setDelegate(MusicPlayerDelegate *delegate) {
+    mpDelegate = delegate;
+}
 
 void MusicPlayer::fetchSongs() {
     mSongList.empty();
@@ -78,8 +87,6 @@ void MusicPlayer::fetchSongs() {
 
             if (!(fileInfo.fattrib & AM_DIR) && (strcmp(ext, mp3[0]) || strcmp(ext, mp3[1]))) {
 
-                SongInfo song;
-
                 const char *fullName = fileInfo.lfname[0] == 0 ? fileInfo.fname : fileInfo.lfname;
 
                 // construct and save full file path by combining directory path and full file name...
@@ -88,18 +95,17 @@ void MusicPlayer::fetchSongs() {
                 strcpy(path, dirPath);
                 strcat(path, fullName);
                 path[len-1] = '\0'; // set terminal char at the end of string
-                song.path = path;
 
                 // parse and save song name without extension...
                 len = strlen(fullName) - strlen(mp3[0]) + 1;
                 char *name = new char[len];
                 strncpy(name, fullName, len);
                 name[len-1] = '\0'; // set terminal char at the end of string
-                song.name = name;
 
-                song.fileSize = fileInfo.fsize;
-
-                mSongList.push_back(song);
+                MP3File file = MP3File(path, fileInfo.fsize);
+                file.setName(name);
+                file.fetch();
+                mSongList.push_back(file);
             }
         }
         f_closedir(&directory);
@@ -110,7 +116,7 @@ MusicPlayer::PlayerState MusicPlayer::state() {
     return mState;
 }
 
-void MusicPlayer::queue(SongInfo *song, uint32_t index) {
+void MusicPlayer::queue(MP3File *song, uint32_t index) {
     mDecoder.enablePlayback();
 
     mState = PLAYING;
@@ -121,18 +127,19 @@ void MusicPlayer::queue(SongInfo *song, uint32_t index) {
 
         bufferTask->newSongSelected = true;
         xSemaphoreGive(SPI::spiMutex[SPI::SSP1]);
+        mpDelegate->willStartPlaying(song);
         xQueueSend(mSongQueue, &song, portMAX_DELAY);
     }
 }
 
 void MusicPlayer::pause() {
-    mDecoder.disablePlayback();
+    mpDelegate->willPause();
     mState = PAUSED;
 }
 
 void MusicPlayer::resume() {
     mDecoder.resumePlayback();
-    //xSemaphoreGive(mPlaySema);
+    mpDelegate->willResume();
     mState = PLAYING;
 }
 
@@ -175,15 +182,18 @@ inline void MusicPlayer::setVolume(uint8_t percentage) {
     mDecoder.setVolume( (mVolume/100.0) * VS1053B_MAX_VOL );
 }
 
-// UITableViewDataSource Implementation
+// TableViewDataSource & TableViewDelegate Implementation
 
 inline uint32_t MusicPlayer::numberOfItems() const {
     return mSongList.size();
 }
 
-inline void MusicPlayer::cellForIndex(UITableViewCell &cell, uint32_t index) {
-    SongInfo info = mSongList.at(index);
-    cell.setText(info.name, strlen(info.name));
+inline void MusicPlayer::cellForIndex(TableViewCell &cell, uint32_t index) {
+    cell.setText(mSongList[index].getTitle());
+}
+
+inline void MusicPlayer::tableViewDidSelectCellAt(const TableView *tableView, TableViewCell &cell, uint32_t index) {
+    queue(&mSongList[index], index);
 }
 
 // BufferMusicTask Implementation
@@ -193,11 +203,11 @@ bool MusicPlayer::BufferMusicTask::run(void *) {
     const uint32_t bufferSize = STREAM_QUEUE_BUFFER_SIZE;
 
     while (1) {
-        SongInfo *song = NULL;
+        MP3File *song = NULL;
         if (xQueueReceive(mSongQueue, &song, portMAX_DELAY)) {
 
-            const uint32_t fileSize = song->fileSize;
-            const char *path = song->path;
+            const uint32_t fileSize = song->getFileSize();
+            const char *path = song->getPath();
 
             newSongSelected = false;
 

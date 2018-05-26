@@ -17,18 +17,36 @@
 #include "queue.h"
 #include "scheduler_task.hpp"
 
-#include <MP3/UI/UITableView.hpp>
+#include <MP3/UI/TableView.hpp>
+#include "MP3/MP3File.hpp"
 
-typedef struct {
-    /// Full file path to song.
-    char *path;
-    /// Formated file name w/o dir prefix and extension type.
-    char *name;
-    /// total size of file in bytes.
-    uint32_t fileSize;
-} SongInfo;
+/**
+ * MusicPlayerDelegate
+ *
+ * Used to communicate between the player and UI to update the NowPlayingView.
+ */
+class MusicPlayerDelegate {
+public:
+    virtual void willStartPlaying(MP3File *mp3) = 0;
+    virtual void willPause() = 0;
+    virtual void willResume() = 0;
+    virtual void willStop() = 0;
+};
 
-class MusicPlayer: protected virtual UITableViewDataSource {
+/**
+ * THe MusicPlayer class handles the buffering of the song data to the VS1053B audio decoder.
+ *
+ * On initialization, all mp3 files are fetched from the SD Card and stored into mSongList.
+ *
+ * The function queue(SongInfo *song, uint32_t index) is called queue a selected song for the BufferMusicTask
+ * to start fetching data for the selected song.
+ *
+ * When the state of the player is changed, the MusicPlayerDelegate (NowPlayingView) is notified of the change in state to update
+ * the view and display relevant information to the user.
+ *
+ * Additionally, the MusicPlayer also conforms and implments TableViewDataSource and TableViewDelegate to populate the song menu.
+ */
+class MusicPlayer: protected virtual TableViewDataSource, TableViewDelegate {
 
 private:
 
@@ -47,16 +65,40 @@ public:
 
     virtual ~MusicPlayer();
 
-    SongInfo* songAt(uint32_t idx) { return &mSongList.at(idx); }
+    void setDelegate(MusicPlayerDelegate *delegate);
 
+    MP3File* songAt(uint32_t idx) { return &mSongList.at(idx); }
+
+    /// @return Returns the current state of the player.
     PlayerState state();
 
-    void queue(SongInfo *song);
-    void queue(SongInfo *song, uint32_t index);
+    /**
+     * Queue a song for playback.
+     *
+     * @param song  Pointer to the SongInfo of the song to queue.
+     * @param index Index of the song in mSongList.
+     */
+    void queue(MP3File *song, uint32_t index);
+
+    /// Pause the music player and also pause decoding of the current song. resume() is called to resume the player and decoding.
     void pause();
     void resume();
 
+    /**
+     * If the player is currently playing a song, the player will go back to the previous song.
+     * If the beginning of the song list is reach, the player will loop back and play the last
+     * song on the song list.
+     *
+     * On reset, when playPrevious() is called, the play will play the last song in the song list.
+     */
     void playPrevious();
+
+    /**
+     * If the player is currently playing a song, the player will skip to the next song.
+     * If the end of the song list is reached, the player will start at the first song.
+     *
+     * On reset, if playNext() is called, the player will play the song following the first song.
+     */
     void playNext();
 
     /// Increment the music player volume by 5%.
@@ -73,19 +115,21 @@ protected:
 
     static MusicPlayer *instance;
 
-    std::vector<SongInfo> mSongList;
+    std::vector<MP3File> mSongList;
 
     VS1053B &mDecoder = VS1053B::sharedInstance();
 
+    /// Delegate for receiving any updates for when the player's state is changed.
+    MusicPlayerDelegate *mpDelegate;
+
+    /// Task to read and buffer the current song data from SD Card.
     BufferMusicTask *bufferTask;
 
-    QueueHandle_t mStreamQueue;
+    /// Used to communicate with the buffer task to start buffering a selected song.
     QueueHandle_t mSongQueue;
 
+    // TODO: remove
     SemaphoreHandle_t mPlayMutex;
-
-    /// Semaphore to puase or resume playback.
-    //SemaphoreHandle_t mPlaySema;
 
     /// Current state of music player.
     PlayerState mState;
@@ -93,13 +137,13 @@ protected:
     /// Volume percentage, ranges from 0 to 100.
     uint8_t mVolume;
 
+    /// Index of the current song that is being decoded and played.
     uint32_t mSongIndex;
 
     MusicPlayer();
 
+    /// Fetch a list of all mp3 files from the SD Card.
     void fetchSongs();
-
-    void updateBuffer();
 
     /**
      * Set the volume of the decoder.
@@ -108,10 +152,15 @@ protected:
      */
     inline void setVolume(uint8_t percentage);
 
-    // UITableViewDataSource
+    // TableViewDataSource & TableViewDelegate
 
+    /// Returns the number of songs in mSongList.
     virtual inline uint32_t numberOfItems() const final;
-    virtual inline void cellForIndex(UITableViewCell &cell, uint32_t index) final;
+
+    /// Updates a table view cell with song info based on the index.
+    virtual inline void cellForIndex(TableViewCell &cell, uint32_t index) final;
+
+    virtual inline void tableViewDidSelectCellAt(const TableView *tableView, TableViewCell &cell, uint32_t index) final;
 
 };
 
@@ -134,7 +183,7 @@ public:
 };
 
 /**
- * Task to dequeue buffered data from BufferMusicTask for decoding.
+ * Task to dequeue buffered data from BufferMusicTask and send to VS1053B audio decoder for decoding.
  */
 class MusicPlayer::StreamMusicTask final: public scheduler_task {
 

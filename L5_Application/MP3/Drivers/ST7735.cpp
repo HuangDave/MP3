@@ -35,7 +35,7 @@ ST7735& ST7735::sharedInstance() {
 ST7735::ST7735() {
     init(SSP1, DATASIZE_8_BIT, FRAMEMODE_SPI, PCLK_DIV_1);
 
-    // configure pclk to be ~12 MHz = (clk / pclk_div) / CPSDVSR * [SCR+1],
+    // configure pclk to be <12 MHz = (clk / pclk_div) / CPSDVSR * [SCR+1],
     // pclk_div = 1, CPSDVSR = 4, SCR = 0
     SSPn->CR0 &= ~(1 << 8);
     SSPn->CPSR = 4;                                 // minimum prescaler of 2
